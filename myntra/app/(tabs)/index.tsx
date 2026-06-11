@@ -11,6 +11,7 @@ import { useRouter } from "expo-router";
 import { Search, ChevronRight } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import RecentlyViewedSection from "@/components/RecentlyViewedSection";
 import axios from "axios";
 
 // const categories = [
@@ -111,8 +112,8 @@ export default function Home() {
     const fetchproduct = async () => {
       try {
         setIsLoading(true);
-        const cat = await axios.get("https://myntra-clone-xj36.onrender.com/category");
-        const product = await axios.get("https://myntra-clone-xj36.onrender.com/product");
+        const cat = await axios.get("http://localhost:5000/category");
+        const product = await axios.get("http://localhost:5000/product");
         setcategories(cat.data);
         setproduct(product.data);
       } catch (error) {
@@ -194,6 +195,8 @@ export default function Home() {
           ))}
         </ScrollView>
       </View>
+
+      <RecentlyViewedSection />
 
       <View style={styles.section}>
         <View style={styles.sectionHeader}>

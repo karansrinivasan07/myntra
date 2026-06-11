@@ -13,6 +13,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Heart, ShoppingBag } from "lucide-react-native";
 import React from "react";
 import { useAuth } from "@/context/AuthContext";
+import { addRecentlyViewed } from "@/utils/recentlyViewed";
 import axios from "axios";
 
 // Mock product data - in a real app, this would come from an API
@@ -99,9 +100,12 @@ export default function ProductDetails() {
       try {
         setIsLoading(true);
         const product = await axios.get(
-          `https://myntra-clone-xj36.onrender.com/product/${id}`
+          `http://localhost:5000/product/${id}`
         );
         setproduct(product.data);
+        if (product.data) {
+          addRecentlyViewed(product.data, user?._id);
+        }
       } catch (error) {
         console.log(error);
         setIsLoading(false);
@@ -150,7 +154,7 @@ export default function ProductDetails() {
     }
 
     try {
-      await axios.post(`https://myntra-clone-xj36.onrender.com/wishlist`, {
+      await axios.post(`http://localhost:5000/wishlist`, {
         userId: user._id,
         productId: id,
       });
@@ -173,7 +177,7 @@ export default function ProductDetails() {
     }
     try {
       setLoading(true);
-      await axios.post(`https://myntra-clone-xj36.onrender.com/bag`, {
+      await axios.post(`http://localhost:5000/bag`, {
         userId: user._id,
         productId: id,
         size: selectedSize,

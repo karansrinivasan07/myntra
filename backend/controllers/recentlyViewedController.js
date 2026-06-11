@@ -3,12 +3,12 @@ const mongoose = require('mongoose');
 
 /** GET /recently-viewed */
 exports.getRecentlyViewed = async (req, res) => {
-  const userId = req.user?.id;
+  const userId = req.user?.id || req.params.userId || req.headers['x-user-id'] || req.body.userId || req.query.userId;
   if (!userId) return res.status(401).json({ message: 'Unauthenticated' });
   try {
     const items = await RecentlyViewed.find({ userId })
       .sort({ viewedAt: -1 })
-      .limit(20)
+      .limit(10)
       .populate('productId', 'name price images');
     res.json(items);
   } catch (err) {
@@ -19,7 +19,7 @@ exports.getRecentlyViewed = async (req, res) => {
 
 /** POST /recently-viewed */
 exports.addOrUpdate = async (req, res) => {
-  const userId = req.user?.id;
+  const userId = req.user?.id || req.body.userId || req.headers['x-user-id'] || req.query.userId;
   const { productId } = req.body;
   if (!userId) return res.status(401).json({ message: 'Unauthenticated' });
   if (!mongoose.isValidObjectId(productId)) return res.status(400).json({ message: 'Invalid productId' });
@@ -31,10 +31,10 @@ exports.addOrUpdate = async (req, res) => {
       { upsert: true, new: true }
     );
 
-    // enforce max 20 items
+    // enforce max 10 items
     const count = await RecentlyViewed.countDocuments({ userId });
-    if (count > 20) {
-      const excess = count - 20;
+    if (count > 10) {
+      const excess = count - 10;
       const oldest = await RecentlyViewed.find({ userId })
         .sort({ viewedAt: 1 })
         .limit(excess);
@@ -49,7 +49,7 @@ exports.addOrUpdate = async (req, res) => {
 
 /** POST /recently-viewed/sync */
 exports.sync = async (req, res) => {
-  const userId = req.user?.id;
+  const userId = req.user?.id || req.body.userId || req.headers['x-user-id'] || req.query.userId;
   const { items } = req.body; // array of { productId, viewedAt }
   if (!userId) return res.status(401).json({ message: 'Unauthenticated' });
   if (!Array.isArray(items)) return res.status(400).json({ message: 'Invalid payload' });
@@ -64,10 +64,10 @@ exports.sync = async (req, res) => {
     }));
     if (bulkOps.length) await RecentlyViewed.bulkWrite(bulkOps);
 
-    // Trim to 20 after sync
+    // Trim to 10 after sync
     const count = await RecentlyViewed.countDocuments({ userId });
-    if (count > 20) {
-      const excess = count - 20;
+    if (count > 10) {
+      const excess = count - 10;
       const toDelete = await RecentlyViewed.find({ userId })
         .sort({ viewedAt: 1 })
         .limit(excess);

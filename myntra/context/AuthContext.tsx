@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { syncRecentlyViewed } from "@/utils/recentlyViewed";
 import { getUserData, saveUserData, clearUserData } from "@/utils/storage";
 import React from "react";
 import axios from "axios";
