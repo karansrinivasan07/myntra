@@ -1,7 +1,7 @@
+import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
   Image,
-  Platform,
   View,
   Text,
   TextInput,
@@ -9,114 +9,12 @@ import {
   ScrollView,
   ActivityIndicator,
 } from "react-native";
-
-import { Collapsible } from "@/components/Collapsible";
-import { ExternalLink } from "@/components/ExternalLink";
-import ParallaxScrollView from "@/components/ParallaxScrollView";
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
-import { IconSymbol } from "@/components/ui/IconSymbol";
-import React, { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
 import { Search, X } from "lucide-react-native";
 import axios from "axios";
-
-// const categories = [
-//   {
-//     id: 1,
-//     name: "Men",
-//     subcategories: [
-//       "T-Shirts",
-//       "Shirts",
-//       "Jeans",
-//       "Trousers",
-//       "Suits",
-//       "Activewear",
-//     ],
-//     image:
-//       "https://images.unsplash.com/photo-1617137968427-85924c800a22?w=500&auto=format&fit=crop",
-//     products: [
-//       {
-//         id: 1,
-//         name: "Casual White T-Shirt",
-//         brand: "Roadster",
-//         price: 499,
-//         discount: "60% OFF",
-//         image:
-//           "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&auto=format&fit=crop",
-//       },
-//       {
-//         id: 2,
-//         name: "Denim Jacket",
-//         brand: "Levis",
-//         price: 2499,
-//         discount: "40% OFF",
-//         image:
-//           "https://images.unsplash.com/photo-1523205771623-e0faa4d2813d?w=500&auto=format&fit=crop",
-//       },
-//     ],
-//   },
-//   {
-//     id: 2,
-//     name: "Women",
-//     subcategories: [
-//       "Dresses",
-//       "Tops",
-//       "Ethnic Wear",
-//       "Western Wear",
-//       "Activewear",
-//     ],
-//     image:
-//       "https://images.unsplash.com/photo-1618244972963-dbad0c4abf18?w=500&auto=format&fit=crop",
-//     products: [
-//       {
-//         id: 3,
-//         name: "Summer Dress",
-//         brand: "ONLY",
-//         price: 1299,
-//         discount: "50% OFF",
-//         image:
-//           "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=500&auto=format&fit=crop",
-//       },
-//     ],
-//   },
-//   {
-//     id: 3,
-//     name: "Kids",
-//     subcategories: [
-//       "Boys Clothing",
-//       "Girls Clothing",
-//       "Infants",
-//       "Toys",
-//       "School Essentials",
-//     ],
-//     image:
-//       "https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?w=500&auto=format&fit=crop",
-//     products: [],
-//   },
-//   {
-//     id: 4,
-//     name: "Beauty",
-//     subcategories: [
-//       "Makeup",
-//       "Skincare",
-//       "Haircare",
-//       "Fragrances",
-//       "Personal Care",
-//     ],
-//     image:
-//       "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=500&auto=format&fit=crop",
-//     products: [],
-//   },
-//   {
-//     id: 5,
-//     name: "Accessories",
-//     subcategories: ["Watches", "Bags", "Jewellery", "Sunglasses", "Belts"],
-//     image:
-//       "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&auto=format&fit=crop",
-//     products: [],
-//   },
-// ];
+import { useTheme } from "@/src/theme";
+import { ThemedView } from "@/components/ThemedView";
+import { ThemedText } from "@/components/ThemedText";
 
 export default function TabTwoScreen() {
   const router = useRouter();
@@ -127,6 +25,8 @@ export default function TabTwoScreen() {
   );
   const [isLoading, setIsLoading] = useState(false);
   const [categories, setcategories] = useState<any>(null);
+  const { theme } = useTheme();
+
   useEffect(() => {
     const fetchproduct = async () => {
       try {
@@ -142,39 +42,46 @@ export default function TabTwoScreen() {
     };
     fetchproduct();
   }, []);
+
   if (isLoading) {
     return (
-      <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="#ff3f6c" />
-      </View>
+      <ThemedView style={styles.loaderContainer} colorType="background">
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </ThemedView>
     );
   }
+
   if (!categories) {
     return (
-      <View style={styles.container}>
-        <Text>Categories not found</Text>
-      </View>
+      <ThemedView style={styles.container} colorType="background">
+        <ThemedText style={{ textAlign: 'center', marginTop: 50 }}>Categories not found</ThemedText>
+      </ThemedView>
     );
   }
+
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     setSelectedCategory(null);
     setSelectedSubcategory(null);
   };
+
   const clearSearch = () => {
     setSearchQuery("");
     setSelectedCategory(null);
     setSelectedSubcategory(null);
   };
+
   const handleCategorySelect = (categoryId: string) => {
     setSelectedCategory(categoryId);
     setSelectedSubcategory(null);
     setSearchQuery("");
   };
+
   const handleSubcategorySelect = (subcategoryId: string) => {
     setSelectedSubcategory(subcategoryId);
     setSearchQuery("");
   };
+
   const filtercategories = categories?.filter(
     (category: any) =>
       category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -187,96 +94,103 @@ export default function TabTwoScreen() {
           product.brand.toLowerCase().includes(searchQuery.toLowerCase())
       )
   );
+
   const selectedcategorydata = selectedCategory
     ? categories?.find((cat: any) => cat._id === selectedCategory)
     : null;
+
   const renderProducts = (products: any) => {
     return products?.map((product: any) => (
       <TouchableOpacity
         key={product._id}
-        style={styles.productCard}
+        style={[styles.productCard, { backgroundColor: theme.colors.card, shadowColor: theme.colors.text }]}
         onPress={() => router.push(`/product/${product._id}`)}
       >
         <Image source={{ uri: product.images[0] }} style={styles.productImage} />
-        <View style={styles.productInfo}>
-          <Text style={styles.brandName}>{product.brand}</Text>
-          <Text style={styles.productName}>{product.name}</Text>
+        <ThemedView style={styles.productInfo} colorType="card">
+          <ThemedText type="default" colorType="textMuted" style={styles.brandName}>{product.brand}</ThemedText>
+          <ThemedText type="defaultSemiBold" numberOfLines={1} style={styles.productName}>{product.name}</ThemedText>
           <View style={styles.priceRow}>
-            <Text style={styles.price}>₹{product.price}</Text>
-            <Text style={styles.discount}>{product.discount}</Text>
+            <ThemedText type="defaultSemiBold" style={styles.price}>₹{product.price}</ThemedText>
+            <ThemedText type="defaultSemiBold" style={{ color: theme.colors.primary, fontSize: 13 }}>{product.discount}</ThemedText>
           </View>
-        </View>
+        </ThemedView>
       </TouchableOpacity>
     ));
   };
-  return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Categories</Text>
-      </View>
 
-      <View style={styles.searchContainer}>
-        <View style={styles.searchInputContainer}>
-          <Search size={20} color="#666" style={styles.searchIcon} />
+  return (
+    <ThemedView style={styles.container} colorType="background">
+      <ThemedView style={[styles.header, { borderBottomColor: theme.colors.border }]} colorType="background">
+        <ThemedText type="title" style={styles.headerTitle}>Categories</ThemedText>
+      </ThemedView>
+
+      <ThemedView style={[styles.searchContainer, { borderBottomColor: theme.colors.border }]} colorType="background">
+        <ThemedView style={[styles.searchInputContainer, { backgroundColor: theme.colors.surface }]} colorType="surface">
+          <Search size={20} color={theme.colors.textMuted} style={styles.searchIcon} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: theme.colors.text }]}
             placeholder="Search for products, brands and more"
+            placeholderTextColor={theme.colors.textMuted}
             value={searchQuery}
             onChangeText={handleSearch}
           />
           {searchQuery !== "" && (
             <TouchableOpacity onPress={clearSearch}>
-              <X size={20} color="#666" />
+              <X size={20} color={theme.colors.text} />
             </TouchableOpacity>
           )}
-        </View>
-      </View>
+        </ThemedView>
+      </ThemedView>
+
       <ScrollView style={styles.content}>
         {!selectedCategory && (
-          <View style={styles.categoriesGrid}>
+          <ThemedView style={styles.categoriesGrid} colorType="background">
             {filtercategories?.map((category: any) => (
               <TouchableOpacity
                 key={category._id}
-                style={styles.categoryCard}
+                style={[styles.categoryCard, { backgroundColor: theme.colors.card, shadowColor: theme.colors.text }]}
                 onPress={() => handleCategorySelect(category._id)}
               >
                 <Image
                   source={{ uri: category.image }}
                   style={styles.categoryImage}
                 />
-                <View style={styles.categoryInfo}>
-                  <Text style={styles.categoryName}>{category.name}</Text>
+                <ThemedView style={styles.categoryInfo} colorType="card">
+                  <ThemedText type="subtitle" style={styles.categoryName}>{category.name}</ThemedText>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                     <View style={styles.subcategories}>
-                      {category?.subcategory?.map((sub: any, index: any) => (
+                      {category?.subcategory?.map((sub: any, idx: any) => (
                         <TouchableOpacity
-                          key={index}
-                          style={styles.subcategoryTag}
+                          key={idx}
+                          style={[styles.subcategoryTag, { backgroundColor: theme.colors.surface }]}
                           onPress={() => handleSubcategorySelect(sub)}
                         >
-                          <Text style={styles.subcategoryText}>{sub}</Text>
+                          <ThemedText type="default" colorType="textMuted" style={styles.subcategoryText}>{sub}</ThemedText>
                         </TouchableOpacity>
                       ))}
                     </View>
                   </ScrollView>
-                </View>
+                </ThemedView>
               </TouchableOpacity>
             ))}
-          </View>
+          </ThemedView>
         )}
 
         {selectedcategorydata && (
-          <View style={styles.categoryDetail}>
+          <ThemedView style={styles.categoryDetail} colorType="background">
             <View style={styles.categoryHeader}>
               <TouchableOpacity
                 style={styles.backButton}
                 onPress={() => setSelectedCategory(null)}
               >
-                <Text style={styles.backButtonText}>← Back to Categories</Text>
+                <ThemedText style={{ color: theme.colors.primary, fontSize: 16 }} type="defaultSemiBold">
+                  ← Back to Categories
+                </ThemedText>
               </TouchableOpacity>
-              <Text style={styles.categoryTitle}>
+              <ThemedText type="title" style={styles.categoryTitle}>
                 {selectedcategorydata.name}
-              </Text>
+              </ThemedText>
             </View>
 
             <ScrollView
@@ -285,35 +199,42 @@ export default function TabTwoScreen() {
               style={styles.subcategoriesScroll}
             >
               {selectedcategorydata.subcategory.map(
-                (sub: any, index: any) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={[
-                      styles.subcategoryButton,
-                      selectedSubcategory === sub && styles.selectedSubcategory,
-                    ]}
-                    onPress={() => handleSubcategorySelect(sub)}
-                  >
-                    <Text
+                (sub: any, idx: any) => {
+                  const isSelected = selectedSubcategory === sub;
+                  return (
+                    <TouchableOpacity
+                      key={idx}
                       style={[
-                        styles.subcategoryButtonText,
-                        selectedSubcategory === sub &&
-                          styles.selectedSubcategoryText,
+                        styles.subcategoryButton,
+                        {
+                          backgroundColor: isSelected ? theme.colors.primary : theme.colors.surface,
+                        },
                       ]}
+                      onPress={() => handleSubcategorySelect(sub)}
                     >
-                      {sub}
-                    </Text>
-                  </TouchableOpacity>
-                )
+                      <Text
+                        style={[
+                          styles.subcategoryButtonText,
+                          {
+                            color: isSelected ? "#fff" : theme.colors.text,
+                            fontWeight: isSelected ? "bold" : "normal",
+                          },
+                        ]}
+                      >
+                        {sub}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                }
               )}
             </ScrollView>
             <View style={styles.productsGrid}>
               {renderProducts(selectedcategorydata?.productId)}
             </View>
-          </View>
+          </ThemedView>
         )}
       </ScrollView>
-    </View>
+    </ThemedView>
   );
 }
 
@@ -322,34 +243,25 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#fff",
   },
   container: {
     flex: 1,
-    backgroundColor: "#fff",
   },
   header: {
     padding: 15,
     paddingTop: 50,
-    backgroundColor: "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#3e3e3e",
+    fontSize: 22,
   },
   searchContainer: {
     padding: 15,
-    backgroundColor: "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
   },
   searchInputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f5f5f5",
     borderRadius: 10,
     padding: 10,
   },
@@ -359,7 +271,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: "#3e3e3e",
+    padding: 0,
   },
   content: {
     flex: 1,
@@ -368,17 +280,15 @@ const styles = StyleSheet.create({
     padding: 15,
   },
   categoryCard: {
-    backgroundColor: "#fff",
     borderRadius: 10,
     marginBottom: 15,
-    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
     },
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
-    elevation: 5,
+    elevation: 3,
     overflow: "hidden",
   },
   categoryImage: {
@@ -390,25 +300,19 @@ const styles = StyleSheet.create({
   },
   categoryName: {
     fontSize: 18,
-    fontWeight: "bold",
-    color: "#3e3e3e",
     marginBottom: 10,
   },
   subcategories: {
     flexDirection: "row",
-    flexWrap: "wrap",
   },
   subcategoryTag: {
-    backgroundColor: "#f5f5f5",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 15,
     marginRight: 8,
-    marginBottom: 8,
   },
   subcategoryText: {
-    fontSize: 14,
-    color: "#666",
+    fontSize: 13,
   },
   categoryDetail: {
     flex: 1,
@@ -420,14 +324,9 @@ const styles = StyleSheet.create({
   backButton: {
     marginBottom: 10,
   },
-  backButtonText: {
-    color: "#ff3f6c",
-    fontSize: 16,
-  },
   categoryTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#3e3e3e",
+    fontSize: 22,
+    marginTop: 5,
   },
   subcategoriesScroll: {
     marginBottom: 15,
@@ -436,18 +335,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: "#f5f5f5",
     marginRight: 10,
-  },
-  selectedSubcategory: {
-    backgroundColor: "#ff3f6c",
   },
   subcategoryButtonText: {
     fontSize: 14,
-    color: "#3e3e3e",
-  },
-  selectedSubcategoryText: {
-    color: "#fff",
   },
   productsGrid: {
     flexDirection: "row",
@@ -456,49 +347,39 @@ const styles = StyleSheet.create({
   },
   productCard: {
     width: "48%",
-    backgroundColor: "#fff",
     borderRadius: 10,
     marginBottom: 15,
-    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
     },
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
-    elevation: 5,
+    elevation: 3,
     overflow: "hidden",
   },
   productImage: {
     width: "100%",
-    height: 200,
+    height: 180,
     resizeMode: "cover",
   },
   productInfo: {
     padding: 10,
   },
   brandName: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 4,
+    fontSize: 11,
+    marginBottom: 2,
   },
   productName: {
-    fontSize: 16,
-    color: "#3e3e3e",
-    marginBottom: 8,
+    fontSize: 13,
+    marginBottom: 5,
   },
   priceRow: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
   },
   price: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#3e3e3e",
-    marginRight: 8,
-  },
-  discount: {
     fontSize: 14,
-    color: "#ff3f6c",
   },
 });

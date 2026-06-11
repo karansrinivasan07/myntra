@@ -1,10 +1,5 @@
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-} from "react-native";
+import React from "react";
+import { ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import {
   User,
@@ -16,105 +11,123 @@ import {
   LogOut,
   ChevronRight,
 } from "lucide-react-native";
-import React from "react";
 import { useAuth } from "@/context/AuthContext";
-
-const menuItems = [
-  { icon: Package, label: "Orders", route: "/orders" },
-  { icon: Heart, label: "Wishlist", route: "/wishlist" },
-  { icon: CreditCard, label: "Payment Methods", route: "/payments" },
-  { icon: MapPin, label: "Addresses", route: "/addresses" },
-  { icon: Settings, label: "Settings", route: "/settings" },
-];
+import { ThemedView } from "@/components/ThemedView";
+import { ThemedText } from "@/components/ThemedText";
+import { useTheme } from "@/src/theme";
 
 export default function Profile() {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { theme, isDark } = useTheme();
+
+  const menuItems = [
+    { icon: Package, label: "Orders", route: "/orders" },
+    { icon: Heart, label: "Wishlist", route: "/wishlist" },
+    { icon: CreditCard, label: "Payment Methods", route: "/payments" },
+    { icon: MapPin, label: "Addresses", route: "/addresses" },
+    { icon: Settings, label: "Settings", route: "/settings" },
+  ];
+
   const handleLogout = () => {
-    logout()
+    logout();
     router.replace("/");
   };
 
   if (!user) {
     return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Profile</Text>
-        </View>
-        <View style={styles.emptyState}>
-          <User size={64} color="#ff3f6c" />
-          <Text style={styles.emptyTitle}>
+      <ThemedView style={styles.container} colorType="background">
+        <ThemedView style={[styles.header, { borderBottomColor: theme.colors.border }]} colorType="background">
+          <ThemedText type="title" style={styles.headerTitle}>Profile</ThemedText>
+        </ThemedView>
+        <ThemedView style={styles.emptyState} colorType="background">
+          <User size={64} color={theme.colors.primary} />
+          <ThemedText style={styles.emptyTitle} type="subtitle">
             Please login to view your profile
-          </Text>
+          </ThemedText>
           <TouchableOpacity
-            style={styles.loginButton}
+            style={[styles.loginButton, { backgroundColor: theme.colors.primary }]}
             onPress={() => router.push("/login")}
           >
-            <Text style={styles.loginButtonText}>LOGIN</Text>
+            <ThemedText style={styles.loginButtonText} type="defaultSemiBold">LOGIN</ThemedText>
           </TouchableOpacity>
-        </View>
-      </View>
+        </ThemedView>
+      </ThemedView>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Profile</Text>
-      </View>
+    <ThemedView style={styles.container} colorType="background">
+      <ThemedView style={[styles.header, { borderBottomColor: theme.colors.border }]} colorType="background">
+        <ThemedText type="title" style={styles.headerTitle}>Profile</ThemedText>
+      </ThemedView>
 
       <ScrollView style={styles.content}>
-        <View style={styles.userInfo}>
-          <View style={styles.avatar}>
+        <ThemedView style={styles.userInfo} colorType="background">
+          <ThemedView style={[styles.avatar, { backgroundColor: theme.colors.primary }]} colorType="background">
             <User size={40} color="#fff" />
-          </View>
-          <View style={styles.userDetails}>
-            <Text style={styles.userName}>{user.name}</Text>
-            <Text style={styles.userEmail}>{user.email}</Text>
-          </View>
-        </View>
+          </ThemedView>
+          <ThemedView style={styles.userDetails} colorType="background">
+            <ThemedText type="title" style={styles.userName}>{user.name}</ThemedText>
+            <ThemedText type="default" colorType="textMuted" style={styles.userEmail}>{user.email}</ThemedText>
+          </ThemedView>
+        </ThemedView>
 
-        <View style={styles.menuSection}>
+        <ThemedView style={styles.menuSection} colorType="background">
           {menuItems.map((item, index) => (
             <TouchableOpacity
               key={index}
-              style={styles.menuItem}
+              style={[
+                styles.menuItem,
+                {
+                  backgroundColor: theme.colors.card,
+                  borderBottomColor: theme.colors.border,
+                },
+              ]}
               onPress={() => router.push(item.route as any)}
             >
-              <View style={styles.menuItemLeft}>
-                <item.icon size={24} color="#3e3e3e" />
-                <Text style={styles.menuItemLabel}>{item.label}</Text>
-              </View>
-              <ChevronRight size={24} color="#3e3e3e" />
+              <ThemedView style={styles.menuItemLeft} colorType="card">
+                <item.icon size={22} color={theme.colors.text} />
+                <ThemedText type="defaultSemiBold" style={styles.menuItemLabel}>
+                  {item.label}
+                </ThemedText>
+              </ThemedView>
+              <ChevronRight size={22} color={theme.colors.textMuted} />
             </TouchableOpacity>
           ))}
-        </View>
+        </ThemedView>
 
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <LogOut size={24} color="#ff3f6c" />
-          <Text style={styles.logoutText}>Logout</Text>
+        <TouchableOpacity
+          style={[
+            styles.logoutButton,
+            {
+              borderColor: theme.colors.primary,
+              backgroundColor: theme.colors.card,
+            },
+          ]}
+          onPress={handleLogout}
+        >
+          <LogOut size={22} color={theme.colors.primary} />
+          <ThemedText type="defaultSemiBold" style={[styles.logoutText, { color: theme.colors.primary }]}>
+            Logout
+          </ThemedText>
         </TouchableOpacity>
       </ScrollView>
-    </View>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
   },
   header: {
     padding: 15,
     paddingTop: 50,
-    backgroundColor: "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#3e3e3e",
+    fontSize: 22,
   },
   content: {
     flex: 1,
@@ -124,15 +137,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
+    marginTop: 100,
   },
   emptyTitle: {
-    fontSize: 18,
-    color: "#3e3e3e",
     marginTop: 20,
     marginBottom: 20,
+    textAlign: "center",
   },
   loginButton: {
-    backgroundColor: "#ff3f6c",
     paddingHorizontal: 40,
     paddingVertical: 15,
     borderRadius: 10,
@@ -140,19 +152,16 @@ const styles = StyleSheet.create({
   loginButtonText: {
     color: "#fff",
     fontSize: 16,
-    fontWeight: "bold",
   },
   userInfo: {
     flexDirection: "row",
     alignItems: "center",
     padding: 20,
-    backgroundColor: "#fff",
   },
   avatar: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: "#ff3f6c",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -161,33 +170,27 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: 20,
-    fontWeight: "bold",
-    color: "#3e3e3e",
     marginBottom: 5,
   },
   userEmail: {
     fontSize: 14,
-    color: "#666",
   },
   menuSection: {
-    marginTop: 20,
+    marginTop: 10,
   },
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 15,
-    backgroundColor: "#fff",
+    padding: 18,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
   },
   menuItemLeft: {
     flexDirection: "row",
     alignItems: "center",
   },
   menuItemLabel: {
-    fontSize: 16,
-    color: "#3e3e3e",
+    fontSize: 15,
     marginLeft: 15,
   },
   logoutButton: {
@@ -195,17 +198,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     padding: 15,
-    marginTop: 20,
+    marginTop: 30,
     marginHorizontal: 15,
     borderRadius: 10,
-    backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: "#ff3f6c",
   },
   logoutText: {
     marginLeft: 10,
     fontSize: 16,
-    color: "#ff3f6c",
-    fontWeight: "bold",
   },
 });

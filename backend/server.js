@@ -8,6 +8,8 @@ const Bagroutes = require("./routes/Bagroutes");
 const Wishlistroutes = require("./routes/Wishlistroutes");
 const OrderRoutes = require("./routes/OrderRoutes");
 const recentlyViewedRouter = require('./routes/recentlyViewed');
+const notificationRouter = require('./routes/notifications');
+const { startWorker } = require("./services/notificationQueue");
 const cors = require('cors');
 dotenv.config();
 const app = express();
@@ -26,12 +28,17 @@ app.use("/bag", Bagroutes);
 app.use("/wishlist", Wishlistroutes);
 app.use("/Order", OrderRoutes);
 app.use("/recently-viewed", recentlyViewedRouter);
+app.use("/notifications", notificationRouter);
+
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     console.log("Mongodb connected");
+    // Start background notification queue worker polling every 5 seconds
+    startWorker(5000);
   })
   .catch((err) => console.log(err));
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
+
