@@ -104,7 +104,7 @@ export default function Home() {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.bellButton}
-            onPress={() => router.push("/notifications")}
+            onPress={() => router.push("/notifications" as any)}
           >
             <Bell size={24} color={theme.colors.text} />
             {unreadCount > 0 && (
