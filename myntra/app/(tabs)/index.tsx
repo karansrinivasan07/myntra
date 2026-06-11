@@ -8,14 +8,15 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Search, ChevronRight } from "lucide-react-native";
-import React, { useEffect, useState } from "react";
+import { Search, ChevronRight, Bell } from "lucide-react-native";
+import React, { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import RecentlyViewedSection from "@/components/RecentlyViewedSection";
 import axios from "axios";
 import { useTheme } from "@/src/theme";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
+import { useFocusEffect } from "@react-navigation/native";
 
 const deals = [
   {
@@ -37,6 +38,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [product, setproduct] = useState<any>(null);
   const [categories, setcategories] = useState<any>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
   const { user } = useAuth();
   const { theme } = useTheme();
 
@@ -47,6 +49,30 @@ export default function Home() {
       router.push(`/product/${productId}`);
     }
   };
+
+  // Fetch unread notification count
+  const fetchUnreadCount = useCallback(async () => {
+    if (!user) {
+      setUnreadCount(0);
+      return;
+    }
+    try {
+      const res = await axios.get(
+        `http://localhost:5000/notifications/${user._id}`
+      );
+      const unread = res.data.filter((n: any) => !n.isRead).length;
+      setUnreadCount(unread);
+    } catch (error) {
+      // Silently fail — badge is non-critical
+    }
+  }, [user]);
+
+  // Re-fetch unread count every time the tab gains focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchUnreadCount();
+    }, [fetchUnreadCount])
+  );
 
   useEffect(() => {
     const fetchproduct = async () => {
@@ -71,9 +97,24 @@ export default function Home() {
       {/* Header */}
       <ThemedView style={[styles.header, { borderBottomColor: theme.colors.border }]} colorType="background">
         <ThemedText type="title" style={[styles.logo, { color: theme.colors.primary }]}>MYNTRA</ThemedText>
-        <TouchableOpacity style={styles.searchButton}>
-          <Search size={24} color={theme.colors.text} />
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity style={styles.searchButton}>
+            <Search size={24} color={theme.colors.text} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.bellButton}
+            onPress={() => router.push("/notifications")}
+          >
+            <Bell size={24} color={theme.colors.text} />
+            {unreadCount > 0 && (
+              <View style={[styles.badge, { backgroundColor: theme.colors.primary }]}>
+                <Text style={styles.badgeText}>
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
       </ThemedView>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 30 }}>
@@ -214,6 +255,31 @@ const styles = StyleSheet.create({
   },
   searchButton: {
     padding: 8,
+  },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  bellButton: {
+    padding: 8,
+    position: "relative",
+  },
+  badge: {
+    position: "absolute",
+    top: 4,
+    right: 4,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 4,
+  },
+  badgeText: {
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: "bold",
   },
   banner: {
     width: "100%",

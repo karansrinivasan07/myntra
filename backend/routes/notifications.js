@@ -3,6 +3,7 @@ const router = express.Router();
 const DeviceToken = require("../models/DeviceToken");
 const Notification = require("../models/Notification");
 const { enqueueNotification } = require("../services/notificationQueue");
+const { checkRateLimit, getRemainingQuota } = require("../services/rateLimiter");
 
 /**
  * Register a device token for a user
@@ -61,6 +62,16 @@ router.post("/send", async (req, res) => {
 
   if (!userId || !title || !body) {
     return res.status(400).json({ message: "userId, title, and body are required" });
+  }
+
+  // Rate limit check
+  if (!checkRateLimit(userId)) {
+    const quota = getRemainingQuota(userId);
+    return res.status(429).json({
+      message: "Rate limit exceeded. Too many notifications.",
+      retryAfterMs: quota.userWindowMs,
+      limit: quota.userLimit,
+    });
   }
 
   try {

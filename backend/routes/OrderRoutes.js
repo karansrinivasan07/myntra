@@ -3,6 +3,7 @@ const Bag = require("../models/Bag");
 const Order = require("../models/Order");
 const router = express.Router();
 const mongoose = require("mongoose");
+const { emitOrderCreated, emitPaymentConfirmed, emitOrderShipped } = require("../services/notificationEvents");
 
 function genrateRandomTracking() {
   const carriers = ["Delhivery", "Bluedart", "Ecom Express", "XpressBees"];
@@ -58,6 +59,7 @@ router.post("/create/:userId", async (req, res) => {
       (sum, item) => sum + item.price + item.quantity,
       0
     );
+    const tracking = genrateRandomTracking();
     const newOrder = new Order({
       userId: userid,
       date: new Date().toISOString(),
@@ -66,10 +68,20 @@ router.post("/create/:userId", async (req, res) => {
       total: total,
       shippingAddress: req.body.shippingAddress,
       paymentMethod:req.body.paymentMethod,
-      tracking: genrateRandomTracking(),
+      tracking: tracking,
     });
     await newOrder.save();
     await Bag.deleteMany({ userId: userid });
+
+    // Emit notification events
+    emitOrderCreated(userid, newOrder._id, total);
+    emitPaymentConfirmed(userid, total, req.body.paymentMethod || "Card");
+
+    // If tracking status is "Shipped", emit shipped event too
+    if (tracking.status === "Shipped" || tracking.status === "In Transit") {
+      emitOrderShipped(userid, newOrder._id, tracking.number);
+    }
+
     res.status(200).json({ message: "Order placed successfully" });
   } catch (error) {
     console.log(error);
