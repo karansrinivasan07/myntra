@@ -31,7 +31,8 @@ export default function Bag() {
   const [savedItems, setSavedItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  
+  const [movingItemId, setMovingItemId] = useState<string | null>(null); // tracks which saved item is being moved
+
   // Validation state
   const [validationItems, setValidationItems] = useState<any[]>([]);
   const [isValidationLoading, setIsValidationLoading] = useState(false);
@@ -126,12 +127,22 @@ export default function Bag() {
 
   const handleMoveToCart = async (itemId: string) => {
     try {
+      setMovingItemId(itemId);
+      // Optimistic UI: immediately remove from saved list so user sees instant response
+      setSavedItems(prev => prev.filter(i => i._id !== itemId));
       await axios.post(`${API_BASE_URL}/cart/saved/${itemId}/move-to-cart`);
+      // Sync real state from server (will also update active items)
       fetchCart(false);
     } catch (error: any) {
       console.warn("Move to cart error:", error?.response?.data);
-      Alert.alert("Stock / Move Limit", error?.response?.data?.message || "Could not move item back to bag.");
+      // Revert optimistic removal on failure
       fetchCart(false);
+      Alert.alert(
+        "Could Not Move Item",
+        error?.response?.data?.message || "Could not move item back to bag. Please try again."
+      );
+    } finally {
+      setMovingItemId(null);
     }
   };
 
@@ -347,36 +358,54 @@ export default function Bag() {
       ) : (
         savedItems.map((item: any) => {
           const product = item.productId;
-          const outOfStock = product && product.stock === 0;
-          const discontinued = product && product.isDiscontinued;
+          // Guard: if product not populated, treat as unavailable
+          const isProductMissing = !product || typeof product !== 'object';
+          const outOfStock = isProductMissing || product.stock === 0;
+          const discontinued = isProductMissing ? false : !!product.isDiscontinued;
+          const isMoving = movingItemId === item._id;
+          const isDisabled = discontinued || outOfStock || isMoving;
+
+          // Safe image URI — guard against null product or empty images array
+          const imageUri =
+            !isProductMissing && Array.isArray(product.images) && product.images[0]
+              ? product.images[0]
+              : "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&auto=format&fit=crop";
 
           return (
             <ThemedView
               key={item._id}
-              style={[styles.bagItem, { backgroundColor: theme.colors.card, opacity: 0.85 }]}
+              style={[
+                styles.bagItem,
+                { backgroundColor: theme.colors.card },
+                isMoving && { opacity: 0.5 },
+              ]}
               colorType="card"
             >
               <Image
-                source={{ uri: product?.images[0] || "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&auto=format&fit=crop" }}
+                source={{ uri: imageUri }}
                 style={styles.itemImage}
                 resizeMode="cover"
               />
-              
+
               <ThemedView style={styles.itemInfo} colorType="card">
                 <ThemedText type="default" colorType="textMuted" style={[styles.brandName, { fontSize: scaleFont(11) }]}>
-                  {product?.brand}
+                  {isProductMissing ? "—" : product.brand}
                 </ThemedText>
                 <ThemedText type="defaultSemiBold" numberOfLines={1} style={[styles.itemName, { fontSize: scaleFont(14) }]}>
-                  {product?.name}
+                  {isProductMissing ? "Product unavailable" : product.name}
                 </ThemedText>
                 <ThemedText type="default" colorType="textMuted" style={[styles.itemSize, { fontSize: scaleFont(12) }]}>
                   Size: {item.size}
                 </ThemedText>
-                <ThemedText type="defaultSemiBold" style={[styles.itemPrice, { fontSize: scaleFont(14) }]}>
-                  ₹{product?.price}
-                </ThemedText>
+                {!isProductMissing && (
+                  <ThemedText type="defaultSemiBold" style={[styles.itemPrice, { fontSize: scaleFont(14) }]}>
+                    ₹{product.price}
+                  </ThemedText>
+                )}
 
-                {discontinued ? (
+                {isProductMissing ? (
+                  <Text style={[styles.errorText, { fontSize: scaleFont(12) }]}>Product no longer available</Text>
+                ) : discontinued ? (
                   <Text style={[styles.errorText, { fontSize: scaleFont(12) }]}>Product Discontinued</Text>
                 ) : outOfStock ? (
                   <Text style={[styles.errorText, { fontSize: scaleFont(12) }]}>Out of stock</Text>
@@ -385,23 +414,33 @@ export default function Bag() {
                 <View style={styles.savedActions}>
                   <TouchableOpacity
                     style={[
-                      styles.moveToBagButton, 
-                      { borderColor: theme.colors.primary },
-                      (discontinued || outOfStock) && styles.disabledMoveButton
+                      styles.moveToBagButton,
+                      { borderColor: isDisabled ? "#ccc" : theme.colors.primary },
+                      isDisabled && styles.disabledMoveButton,
                     ]}
                     onPress={() => handleMoveToCart(item._id)}
-                    disabled={discontinued || outOfStock}
+                    disabled={isDisabled}
                   >
-                    <ThemedText style={[styles.moveToBagText, { color: theme.colors.primary, fontSize: scaleFont(11) }]}>
-                      MOVE TO BAG
-                    </ThemedText>
+                    {isMoving ? (
+                      <ActivityIndicator size="small" color={theme.colors.primary} />
+                    ) : (
+                      <ThemedText
+                        style={[
+                          styles.moveToBagText,
+                          { color: isDisabled ? "#ccc" : theme.colors.primary, fontSize: scaleFont(11) },
+                        ]}
+                      >
+                        MOVE TO BAG
+                      </ThemedText>
+                    )}
                   </TouchableOpacity>
 
                   <TouchableOpacity
                     style={styles.removeSavedButton}
                     onPress={() => handleRemoveItem(item._id)}
+                    disabled={isMoving}
                   >
-                    <Trash2 size={20} color={theme.colors.textMuted} />
+                    <Trash2 size={20} color={isMoving ? "#ccc" : theme.colors.textMuted} />
                   </TouchableOpacity>
                 </View>
               </ThemedView>
