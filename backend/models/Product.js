@@ -10,10 +10,15 @@ const ProductSchema = new mongoose.Schema(
     images: [String],
     stock: { type: Number, default: 50, index: true },
     isDiscontinued: { type: Boolean, default: false, index: true },
-    version: { type: Number, default: 1 }
+    version: { type: Number, default: 1 },
+    categories: [{ type: mongoose.Schema.Types.ObjectId, ref: "Category" }]
   },
   { timestamps: true }
 );
 
+// Compound index to optimize recommendation queries
+ProductSchema.index({ categories: 1, stock: 1, isDiscontinued: 1 });
+
 module.exports = mongoose.model("Product", ProductSchema);
+
 

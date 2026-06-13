@@ -18,32 +18,35 @@ import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { API_BASE_URL } from "@/constants/Api";
 import { useFocusEffect } from "@react-navigation/native";
+import { useResponsive } from "@/src/hooks/useResponsive";
+import ResponsiveContainer from "@/src/components/responsive/ResponsiveContainer";
+import ResponsiveGrid from "@/src/components/responsive/ResponsiveGrid";
 
 const deals = [
   {
     id: 1,
     title: "Under ₹599",
-    image:
-      "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=500&auto=format&fit=crop",
+    image: "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=500&auto=format&fit=crop",
   },
   {
     id: 2,
     title: "40-70% Off",
-    image:
-      "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=500&auto=format&fit=crop",
+    image: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=500&auto=format&fit=crop",
   },
 ];
 
 export default function Home() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [product, setproduct] = useState<any>(null);
-  const [categories, setcategories] = useState<any>(null);
+  const [product, setproduct] = useState<any[]>([]);
+  const [categories, setcategories] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const { user } = useAuth();
   const { theme } = useTheme();
+  
+  const { scaleFont, spacing, isTablet } = useResponsive();
 
-  const handleProductPress = (productId: number) => {
+  const handleProductPress = (productId: string) => {
     if (!user) {
       router.push("/login");
     } else {
@@ -58,17 +61,14 @@ export default function Home() {
       return;
     }
     try {
-      const res = await axios.get(
-        `${API_BASE_URL}/notifications/${user._id}`
-      );
+      const res = await axios.get(`${API_BASE_URL}/notifications/${user._id}`);
       const unread = res.data.filter((n: any) => !n.isRead).length;
       setUnreadCount(unread);
     } catch (error) {
-      // Silently fail — badge is non-critical
+      // Silently fail
     }
   }, [user]);
 
-  // Re-fetch unread count every time the tab gains focus
   useFocusEffect(
     useCallback(() => {
       fetchUnreadCount();
@@ -80,12 +80,11 @@ export default function Home() {
       try {
         setIsLoading(true);
         const cat = await axios.get(`${API_BASE_URL}/category`);
-        const product = await axios.get(`${API_BASE_URL}/product`);
-        setcategories(cat.data);
-        setproduct(product.data);
+        const prod = await axios.get(`${API_BASE_URL}/product`);
+        setcategories(cat.data || []);
+        setproduct(prod.data || []);
       } catch (error) {
         console.log(error);
-        setIsLoading(false);
       } finally {
         setIsLoading(false);
       }
@@ -94,10 +93,12 @@ export default function Home() {
   }, []);
 
   return (
-    <ThemedView style={styles.container} colorType="background">
+    <ResponsiveContainer>
       {/* Header */}
-      <ThemedView style={[styles.header, { borderBottomColor: theme.colors.border }]} colorType="background">
-        <ThemedText type="title" style={[styles.logo, { color: theme.colors.primary }]}>MYNTRA</ThemedText>
+      <ThemedView style={[styles.header, { borderBottomColor: theme.colors.border, padding: spacing.md }]} colorType="background">
+        <ThemedText type="title" style={[styles.logo, { color: theme.colors.primary, fontSize: scaleFont(24) }]}>
+          MYNTRA
+        </ThemedText>
         <View style={styles.headerActions}>
           <TouchableOpacity style={styles.searchButton}>
             <Search size={24} color={theme.colors.text} />
@@ -118,44 +119,45 @@ export default function Home() {
         </View>
       </ThemedView>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 30 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 30 }} showsVerticalScrollIndicator={false}>
         <Image
           source={{
-            uri: "https://images.unsplash.com/photo-1445205170230-053b83016050?w=800&auto=format&fit=crop",
+            uri: "https://images.unsplash.com/photo-1445205170230-053b83016050?w=1200&auto=format&fit=crop",
           }}
-          style={styles.banner}
+          style={[styles.banner, { height: isTablet ? 320 : 200 }]}
+          resizeMode="cover"
         />
 
         {/* Categories Section */}
-        <ThemedView style={styles.section} colorType="background">
+        <ThemedView style={[styles.section, { padding: spacing.md }]} colorType="background">
           <ThemedView style={styles.sectionHeader} colorType="background">
-            <ThemedText type="subtitle" style={styles.sectionTitle}>SHOP BY CATEGORY</ThemedText>
+            <ThemedText type="subtitle" style={[styles.sectionTitle, { fontSize: scaleFont(16) }]}>
+              SHOP BY CATEGORY
+            </ThemedText>
             <TouchableOpacity style={styles.viewAll}>
-              <ThemedText style={{ color: theme.colors.primary, marginRight: 5 }} type="defaultSemiBold">View All</ThemedText>
+              <ThemedText style={{ color: theme.colors.primary, marginRight: 5, fontSize: scaleFont(14) }} type="defaultSemiBold">
+                View All
+              </ThemedText>
               <ChevronRight size={20} color={theme.colors.primary} />
             </TouchableOpacity>
           </ThemedView>
+          
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             style={styles.categoriesScroll}
           >
             {isLoading ? (
-              <ActivityIndicator
-                size="large"
-                color={theme.colors.primary}
-                style={styles.loader}
-              />
-            ) : !categories || categories.length === 0 ? (
+              <ActivityIndicator size="large" color={theme.colors.primary} style={styles.loader} />
+            ) : categories.length === 0 ? (
               <ThemedText colorType="textMuted" style={styles.emptyText}>No categories available</ThemedText>
             ) : (
               categories.map((category: any) => (
                 <TouchableOpacity key={category._id} style={styles.categoryCard}>
-                  <Image
-                    source={{ uri: category.image }}
-                    style={styles.categoryImage}
-                  />
-                  <ThemedText style={styles.categoryName} type="defaultSemiBold">{category.name}</ThemedText>
+                  <Image source={{ uri: category.image }} style={styles.categoryImage} />
+                  <ThemedText style={[styles.categoryName, { fontSize: scaleFont(13) }]} type="defaultSemiBold">
+                    {category.name}
+                  </ThemedText>
                 </TouchableOpacity>
               ))
             )}
@@ -163,9 +165,11 @@ export default function Home() {
         </ThemedView>
 
         {/* Deals Section */}
-        <ThemedView style={styles.section} colorType="background">
+        <ThemedView style={[styles.section, { padding: spacing.md }]} colorType="background">
           <ThemedView style={styles.sectionHeader} colorType="background">
-            <ThemedText type="subtitle" style={styles.sectionTitle}>DEALS OF THE DAY</ThemedText>
+            <ThemedText type="subtitle" style={[styles.sectionTitle, { fontSize: scaleFont(16) }]}>
+              DEALS OF THE DAY
+            </ThemedText>
           </ThemedView>
           <ScrollView
             horizontal
@@ -174,9 +178,9 @@ export default function Home() {
           >
             {deals.map((deal) => (
               <TouchableOpacity key={deal.id} style={styles.dealCard}>
-                <Image source={{ uri: deal.image }} style={styles.dealImage} />
+                <Image source={{ uri: deal.image }} style={styles.dealImage} resizeMode="cover" />
                 <View style={styles.dealOverlay}>
-                  <Text style={styles.dealTitle}>{deal.title}</Text>
+                  <Text style={[styles.dealTitle, { fontSize: scaleFont(16) }]}>{deal.title}</Text>
                 </View>
               </TouchableOpacity>
             ))}
@@ -187,59 +191,59 @@ export default function Home() {
         <RecentlyViewedSection />
 
         {/* Trending Section */}
-        <ThemedView style={styles.section} colorType="background">
+        <ThemedView style={[styles.section, { padding: spacing.md }]} colorType="background">
           <ThemedView style={styles.sectionHeader} colorType="background">
-            <ThemedText type="subtitle" style={styles.sectionTitle}>TRENDING NOW</ThemedText>
+            <ThemedText type="subtitle" style={[styles.sectionTitle, { fontSize: scaleFont(16) }]}>
+              TRENDING NOW
+            </ThemedText>
           </ThemedView>
-          <View style={styles.productsGrid}>
-            {isLoading ? (
-              <ActivityIndicator
-                size="large"
-                color={theme.colors.primary}
-                style={styles.loader}
-              />
-            ) : !product || product.length === 0 ? (
-              <ThemedText colorType="textMuted" style={styles.emptyText}>No Product available</ThemedText>
-            ) : (
-              <View style={styles.productsGrid}>
-                {product.map((p: any) => (
-                  <TouchableOpacity
-                    key={p._id}
-                    style={[styles.productCard, { backgroundColor: theme.colors.card, shadowColor: theme.colors.text }]}
-                    onPress={() => handleProductPress(p._id)}
-                  >
-                    <Image
-                      source={{ uri: p.images[0] }}
-                      style={styles.productImage}
-                    />
-                    <ThemedView style={styles.productInfo} colorType="card">
-                      <ThemedText type="default" colorType="textMuted" style={styles.brandName}>{p.brand}</ThemedText>
-                      <ThemedText type="defaultSemiBold" numberOfLines={1} style={styles.productName}>{p.name}</ThemedText>
-                      <View style={styles.priceRow}>
-                        <ThemedText type="defaultSemiBold" style={styles.productPrice}>{p.price}</ThemedText>
-                        <ThemedText type="defaultSemiBold" style={{ color: theme.colors.primary, fontSize: 13 }}>{p.discount}</ThemedText>
-                      </View>
-                    </ThemedView>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-          </View>
+          
+          {isLoading ? (
+            <ActivityIndicator size="large" color={theme.colors.primary} style={styles.loader} />
+          ) : product.length === 0 ? (
+            <ThemedText colorType="textMuted" style={styles.emptyText}>No Product available</ThemedText>
+          ) : (
+            <ResponsiveGrid
+              data={product}
+              paddingHorizontal={spacing.md}
+              gap={spacing.md}
+              renderItem={(p: any) => (
+                <TouchableOpacity
+                  style={[styles.productCard, { backgroundColor: theme.colors.card, shadowColor: theme.colors.text }]}
+                  onPress={() => handleProductPress(p._id)}
+                >
+                  <Image source={{ uri: p.images[0] }} style={styles.productImage} resizeMode="cover" />
+                  <ThemedView style={styles.productInfo} colorType="card">
+                    <ThemedText type="default" colorType="textMuted" style={[styles.brandName, { fontSize: scaleFont(11) }]}>
+                      {p.brand}
+                    </ThemedText>
+                    <ThemedText type="defaultSemiBold" numberOfLines={1} style={[styles.productName, { fontSize: scaleFont(13) }]}>
+                      {p.name}
+                    </ThemedText>
+                    <View style={styles.priceRow}>
+                      <ThemedText type="defaultSemiBold" style={[styles.productPrice, { fontSize: scaleFont(14) }]}>
+                        ₹{p.price}
+                      </ThemedText>
+                      <ThemedText type="defaultSemiBold" style={{ color: theme.colors.primary, fontSize: scaleFont(13) }}>
+                        {p.discount}
+                      </ThemedText>
+                    </View>
+                  </ThemedView>
+                </TouchableOpacity>
+              )}
+            />
+          )}
         </ThemedView>
       </ScrollView>
-    </ThemedView>
+    </ResponsiveContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 15,
     paddingTop: 50,
     borderBottomWidth: 1,
   },
@@ -250,7 +254,6 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   logo: {
-    fontSize: 24,
     fontWeight: "bold",
     letterSpacing: 1,
   },
@@ -284,11 +287,9 @@ const styles = StyleSheet.create({
   },
   banner: {
     width: "100%",
-    height: 200,
-    resizeMode: "cover",
   },
   section: {
-    padding: 15,
+    paddingVertical: 10,
   },
   sectionHeader: {
     flexDirection: "row",
@@ -297,7 +298,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontWeight: "bold",
   },
   viewAll: {
     flexDirection: "row",
@@ -318,7 +319,6 @@ const styles = StyleSheet.create({
   categoryName: {
     textAlign: "center",
     marginTop: 8,
-    fontSize: 13,
   },
   dealsScroll: {
     marginHorizontal: -15,
@@ -344,17 +344,10 @@ const styles = StyleSheet.create({
   },
   dealTitle: {
     color: "#fff",
-    fontSize: 16,
     fontWeight: "bold",
   },
-  productsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-  },
   productCard: {
-    width: "48%",
-    marginBottom: 15,
+    width: "100%",
     borderRadius: 10,
     shadowOffset: {
       width: 0,
@@ -367,18 +360,15 @@ const styles = StyleSheet.create({
   },
   productImage: {
     width: "100%",
-    height: 180,
-    resizeMode: "cover",
+    aspectRatio: 1, // Strict aspect ratio prevents stretching
   },
   productInfo: {
     padding: 10,
   },
   brandName: {
-    fontSize: 11,
     marginBottom: 2,
   },
   productName: {
-    fontSize: 13,
     marginBottom: 5,
   },
   priceRow: {
@@ -387,7 +377,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   productPrice: {
-    fontSize: 14,
+    fontWeight: "bold",
   },
   loader: {
     marginTop: 50,

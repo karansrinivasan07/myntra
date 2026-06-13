@@ -10,7 +10,9 @@ const OrderRoutes = require("./routes/OrderRoutes");
 const recentlyViewedRouter = require('./routes/recentlyViewed');
 const notificationRouter = require('./routes/notifications');
 const transactionRouter = require("./routes/TransactionRoutes");
+const recommendationRouter = require("./routes/recommendationRoutes");
 const { startWorker } = require("./services/notificationQueue");
+const { runMigrations } = require("./services/migrationService");
 const cors = require('cors');
 dotenv.config();
 const app = express();
@@ -36,12 +38,15 @@ app.use("/Order", OrderRoutes);
 app.use("/recently-viewed", recentlyViewedRouter);
 app.use("/notifications", notificationRouter);
 app.use("/transactions", transactionRouter);
+app.use("/recommendations", recommendationRouter);
 
 
 mongoose
   .connect(process.env.MONGO_URI, { family: 4 })
   .then(() => {
     console.log("Mongodb connected");
+    // Run startup migrations
+    runMigrations().catch(err => console.error("Migration failed:", err));
     // Start background notification queue worker polling every 5 seconds
     startWorker(5000);
   })

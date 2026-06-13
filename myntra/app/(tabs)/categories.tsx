@@ -16,27 +16,29 @@ import { useTheme } from "@/src/theme";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { API_BASE_URL } from "@/constants/Api";
+import { useResponsive } from "@/src/hooks/useResponsive";
+import ResponsiveContainer from "@/src/components/responsive/ResponsiveContainer";
+import ResponsiveGrid from "@/src/components/responsive/ResponsiveGrid";
 
 export default function TabTwoScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
-    null
-  );
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [categories, setcategories] = useState<any>(null);
+  const [categories, setcategories] = useState<any[]>([]);
   const { theme } = useTheme();
+
+  const { scaleFont, spacing } = useResponsive();
 
   useEffect(() => {
     const fetchproduct = async () => {
       try {
         setIsLoading(true);
         const cat = await axios.get(`${API_BASE_URL}/category`);
-        setcategories(cat.data);
+        setcategories(cat.data || []);
       } catch (error) {
         console.log(error);
-        setIsLoading(false);
       } finally {
         setIsLoading(false);
       }
@@ -46,17 +48,11 @@ export default function TabTwoScreen() {
 
   if (isLoading) {
     return (
-      <ThemedView style={styles.loaderContainer} colorType="background">
-        <ActivityIndicator size="large" color={theme.colors.primary} />
-      </ThemedView>
-    );
-  }
-
-  if (!categories) {
-    return (
-      <ThemedView style={styles.container} colorType="background">
-        <ThemedText style={{ textAlign: 'center', marginTop: 50 }}>Categories not found</ThemedText>
-      </ThemedView>
+      <ResponsiveContainer>
+        <ThemedView style={styles.loaderContainer} colorType="background">
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+        </ThemedView>
+      </ResponsiveContainer>
     );
   }
 
@@ -100,37 +96,17 @@ export default function TabTwoScreen() {
     ? categories?.find((cat: any) => cat._id === selectedCategory)
     : null;
 
-  const renderProducts = (products: any) => {
-    return products?.map((product: any) => (
-      <TouchableOpacity
-        key={product._id}
-        style={[styles.productCard, { backgroundColor: theme.colors.card, shadowColor: theme.colors.text }]}
-        onPress={() => router.push(`/product/${product._id}`)}
-      >
-        <Image source={{ uri: product.images[0] }} style={styles.productImage} />
-        <ThemedView style={styles.productInfo} colorType="card">
-          <ThemedText type="default" colorType="textMuted" style={styles.brandName}>{product.brand}</ThemedText>
-          <ThemedText type="defaultSemiBold" numberOfLines={1} style={styles.productName}>{product.name}</ThemedText>
-          <View style={styles.priceRow}>
-            <ThemedText type="defaultSemiBold" style={styles.price}>₹{product.price}</ThemedText>
-            <ThemedText type="defaultSemiBold" style={{ color: theme.colors.primary, fontSize: 13 }}>{product.discount}</ThemedText>
-          </View>
-        </ThemedView>
-      </TouchableOpacity>
-    ));
-  };
-
   return (
-    <ThemedView style={styles.container} colorType="background">
-      <ThemedView style={[styles.header, { borderBottomColor: theme.colors.border }]} colorType="background">
-        <ThemedText type="title" style={styles.headerTitle}>Categories</ThemedText>
+    <ResponsiveContainer>
+      <ThemedView style={[styles.header, { borderBottomColor: theme.colors.border, padding: spacing.md }]} colorType="background">
+        <ThemedText type="title" style={[styles.headerTitle, { fontSize: scaleFont(22) }]}>Categories</ThemedText>
       </ThemedView>
 
-      <ThemedView style={[styles.searchContainer, { borderBottomColor: theme.colors.border }]} colorType="background">
+      <ThemedView style={[styles.searchContainer, { borderBottomColor: theme.colors.border, padding: spacing.md }]} colorType="background">
         <ThemedView style={[styles.searchInputContainer, { backgroundColor: theme.colors.surface }]} colorType="surface">
           <Search size={20} color={theme.colors.textMuted} style={styles.searchIcon} />
           <TextInput
-            style={[styles.searchInput, { color: theme.colors.text }]}
+            style={[styles.searchInput, { color: theme.colors.text, fontSize: scaleFont(16) }]}
             placeholder="Search for products, brands and more"
             placeholderTextColor={theme.colors.textMuted}
             value={searchQuery}
@@ -144,52 +120,60 @@ export default function TabTwoScreen() {
         </ThemedView>
       </ThemedView>
 
-      <ScrollView style={styles.content}>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {!selectedCategory && (
-          <ThemedView style={styles.categoriesGrid} colorType="background">
-            {filtercategories?.map((category: any) => (
-              <TouchableOpacity
-                key={category._id}
-                style={[styles.categoryCard, { backgroundColor: theme.colors.card, shadowColor: theme.colors.text }]}
-                onPress={() => handleCategorySelect(category._id)}
-              >
-                <Image
-                  source={{ uri: category.image }}
-                  style={styles.categoryImage}
-                />
-                <ThemedView style={styles.categoryInfo} colorType="card">
-                  <ThemedText type="subtitle" style={styles.categoryName}>{category.name}</ThemedText>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                    <View style={styles.subcategories}>
-                      {category?.subcategory?.map((sub: any, idx: any) => (
-                        <TouchableOpacity
-                          key={idx}
-                          style={[styles.subcategoryTag, { backgroundColor: theme.colors.surface }]}
-                          onPress={() => handleSubcategorySelect(sub)}
-                        >
-                          <ThemedText type="default" colorType="textMuted" style={styles.subcategoryText}>{sub}</ThemedText>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  </ScrollView>
-                </ThemedView>
-              </TouchableOpacity>
-            ))}
+          <ThemedView style={[styles.categoriesGrid, { padding: spacing.md }]} colorType="background">
+            <ResponsiveGrid
+              data={filtercategories}
+              paddingHorizontal={spacing.md}
+              gap={spacing.md}
+              phoneCols={1}
+              tabletCols={2}
+              largeTabletCols={3}
+              renderItem={(category: any) => (
+                <TouchableOpacity
+                  style={[styles.categoryCard, { backgroundColor: theme.colors.card, shadowColor: theme.colors.text }]}
+                  onPress={() => handleCategorySelect(category._id)}
+                >
+                  <Image
+                    source={{ uri: category.image }}
+                    style={styles.categoryImage}
+                    resizeMode="cover"
+                  />
+                  <ThemedView style={styles.categoryInfo} colorType="card">
+                    <ThemedText type="subtitle" style={[styles.categoryName, { fontSize: scaleFont(18) }]}>{category.name}</ThemedText>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                      <View style={styles.subcategories}>
+                        {category?.subcategory?.map((sub: any, idx: any) => (
+                          <TouchableOpacity
+                            key={idx}
+                            style={[styles.subcategoryTag, { backgroundColor: theme.colors.surface }]}
+                            onPress={() => handleSubcategorySelect(sub)}
+                          >
+                            <ThemedText type="default" colorType="textMuted" style={[styles.subcategoryText, { fontSize: scaleFont(13) }]}>{sub}</ThemedText>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    </ScrollView>
+                  </ThemedView>
+                </TouchableOpacity>
+              )}
+            />
           </ThemedView>
         )}
 
         {selectedcategorydata && (
-          <ThemedView style={styles.categoryDetail} colorType="background">
+          <ThemedView style={[styles.categoryDetail, { padding: spacing.md }]} colorType="background">
             <View style={styles.categoryHeader}>
               <TouchableOpacity
                 style={styles.backButton}
                 onPress={() => setSelectedCategory(null)}
               >
-                <ThemedText style={{ color: theme.colors.primary, fontSize: 16 }} type="defaultSemiBold">
+                <ThemedText style={{ color: theme.colors.primary, fontSize: scaleFont(16) }} type="defaultSemiBold">
                   ← Back to Categories
                 </ThemedText>
               </TouchableOpacity>
-              <ThemedText type="title" style={styles.categoryTitle}>
+              <ThemedText type="title" style={[styles.categoryTitle, { fontSize: scaleFont(22) }]}>
                 {selectedcategorydata.name}
               </ThemedText>
             </View>
@@ -219,6 +203,7 @@ export default function TabTwoScreen() {
                           {
                             color: isSelected ? "#fff" : theme.colors.text,
                             fontWeight: isSelected ? "bold" : "normal",
+                            fontSize: scaleFont(14),
                           },
                         ]}
                       >
@@ -229,13 +214,35 @@ export default function TabTwoScreen() {
                 }
               )}
             </ScrollView>
-            <View style={styles.productsGrid}>
-              {renderProducts(selectedcategorydata?.productId)}
-            </View>
+            
+            <ResponsiveGrid
+              data={selectedcategorydata?.productId || []}
+              paddingHorizontal={spacing.md}
+              gap={spacing.md}
+              phoneCols={2}
+              tabletCols={3}
+              largeTabletCols={4}
+              renderItem={(product: any) => (
+                <TouchableOpacity
+                  style={[styles.productCard, { backgroundColor: theme.colors.card, shadowColor: theme.colors.text }]}
+                  onPress={() => router.push(`/product/${product._id}`)}
+                >
+                  <Image source={{ uri: product.images[0] }} style={styles.productImage} resizeMode="cover" />
+                  <ThemedView style={styles.productInfo} colorType="card">
+                    <ThemedText type="default" colorType="textMuted" style={[styles.brandName, { fontSize: scaleFont(11) }]}>{product.brand}</ThemedText>
+                    <ThemedText type="defaultSemiBold" numberOfLines={1} style={[styles.productName, { fontSize: scaleFont(13) }]}>{product.name}</ThemedText>
+                    <View style={styles.priceRow}>
+                      <ThemedText type="defaultSemiBold" style={[styles.price, { fontSize: scaleFont(14) }]}>₹{product.price}</ThemedText>
+                      <ThemedText type="defaultSemiBold" style={{ color: theme.colors.primary, fontSize: scaleFont(13) }}>{product.discount}</ThemedText>
+                    </View>
+                  </ThemedView>
+                </TouchableOpacity>
+              )}
+            />
           </ThemedView>
         )}
       </ScrollView>
-    </ThemedView>
+    </ResponsiveContainer>
   );
 }
 
@@ -245,19 +252,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  container: {
-    flex: 1,
-  },
   header: {
-    padding: 15,
     paddingTop: 50,
     borderBottomWidth: 1,
   },
   headerTitle: {
-    fontSize: 22,
+    fontWeight: "bold",
   },
   searchContainer: {
-    padding: 15,
     borderBottomWidth: 1,
   },
   searchInputContainer: {
@@ -271,18 +273,17 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
     padding: 0,
   },
   content: {
     flex: 1,
   },
   categoriesGrid: {
-    padding: 15,
+    flex: 1,
   },
   categoryCard: {
+    width: "100%",
     borderRadius: 10,
-    marginBottom: 15,
     shadowOffset: {
       width: 0,
       height: 2,
@@ -300,7 +301,7 @@ const styles = StyleSheet.create({
     padding: 15,
   },
   categoryName: {
-    fontSize: 18,
+    fontWeight: "bold",
     marginBottom: 10,
   },
   subcategories: {
@@ -313,11 +314,10 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   subcategoryText: {
-    fontSize: 13,
+    fontWeight: "500",
   },
   categoryDetail: {
     flex: 1,
-    padding: 15,
   },
   categoryHeader: {
     marginBottom: 15,
@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   categoryTitle: {
-    fontSize: 22,
+    fontWeight: "bold",
     marginTop: 5,
   },
   subcategoriesScroll: {
@@ -338,18 +338,10 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginRight: 10,
   },
-  subcategoryButtonText: {
-    fontSize: 14,
-  },
-  productsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-  },
+  subcategoryButtonText: {},
   productCard: {
-    width: "48%",
+    width: "100%",
     borderRadius: 10,
-    marginBottom: 15,
     shadowOffset: {
       width: 0,
       height: 2,
@@ -361,18 +353,15 @@ const styles = StyleSheet.create({
   },
   productImage: {
     width: "100%",
-    height: 180,
-    resizeMode: "cover",
+    aspectRatio: 1, // Strict aspect ratio prevents stretching
   },
   productInfo: {
     padding: 10,
   },
   brandName: {
-    fontSize: 11,
     marginBottom: 2,
   },
   productName: {
-    fontSize: 13,
     marginBottom: 5,
   },
   priceRow: {
@@ -381,6 +370,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   price: {
-    fontSize: 14,
+    fontWeight: "bold",
   },
 });

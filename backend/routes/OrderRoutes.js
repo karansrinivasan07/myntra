@@ -86,6 +86,14 @@ router.post("/create/:userId", async (req, res) => {
       // Deduct stock
       product.stock -= item.quantity;
       await product.save({ session });
+      if (product.stock <= 0) {
+        try {
+          const recommendationService = require("../services/recommendationService");
+          await recommendationService.invalidateProduct(product._id);
+        } catch (e) {
+          console.error("Cache invalidation failed: ", e);
+        }
+      }
 
       orderitem.push({
         productId: item.productId,
@@ -156,6 +164,14 @@ router.post("/create/:userId", async (req, res) => {
       emitOrderShipped(userid, newOrder._id, tracking.number);
     }
 
+    // Invalidate user recommendation cache
+    try {
+      const RecommendationCache = require("../models/RecommendationCache");
+      await RecommendationCache.deleteMany({ userId: userid });
+    } catch (e) {
+      console.error("User cache invalidation failed: ", e);
+    }
+
     res.status(200).json({ message: "Order placed successfully" });
   } catch (error) {
     await session.abortTransaction();
@@ -192,6 +208,14 @@ router.post("/create/:userId", async (req, res) => {
           const product = await Product.findById(item.productId);
           product.stock -= item.quantity;
           await product.save();
+          if (product.stock <= 0) {
+            try {
+              const recommendationService = require("../services/recommendationService");
+              await recommendationService.invalidateProduct(product._id);
+            } catch (e) {
+              console.error("Cache invalidation failed: ", e);
+            }
+          }
 
           orderitem.push({
             productId: item.productId,
@@ -251,6 +275,14 @@ router.post("/create/:userId", async (req, res) => {
 
         if (tracking.status === "Shipped" || tracking.status === "In Transit") {
           emitOrderShipped(userid, newOrder._id, tracking.number);
+        }
+
+        // Invalidate user recommendation cache
+        try {
+          const RecommendationCache = require("../models/RecommendationCache");
+          await RecommendationCache.deleteMany({ userId: userid });
+        } catch (e) {
+          console.error("User cache invalidation failed: ", e);
         }
 
         return res.status(200).json({ message: "Order placed successfully" });

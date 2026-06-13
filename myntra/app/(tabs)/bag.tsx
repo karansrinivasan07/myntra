@@ -8,16 +8,19 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
-  Modal,
+  Text,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { ShoppingBag, Minus, Plus, Trash2, AlertTriangle, RefreshCw, Bookmark } from "lucide-react-native";
+import { ShoppingBag, Minus, Plus, Trash2, AlertTriangle, Bookmark } from "lucide-react-native";
 import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/src/theme";
 import { API_BASE_URL } from "@/constants/Api";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
+import { useResponsive } from "@/src/hooks/useResponsive";
+import ResponsiveContainer from "@/src/components/responsive/ResponsiveContainer";
+import ResponsiveModal from "@/src/components/responsive/ResponsiveModal";
 
 export default function Bag() {
   const router = useRouter();
@@ -35,6 +38,8 @@ export default function Bag() {
   const [showPriceModal, setShowPriceModal] = useState(false);
   const [validationMessage, setValidationMessage] = useState("");
 
+  const { scaleFont, spacing, isTablet } = useResponsive();
+
   const fetchCart = useCallback(async (showLoader = true) => {
     if (!user) return;
     try {
@@ -42,8 +47,6 @@ export default function Bag() {
       const res = await axios.get(`${API_BASE_URL}/cart/${user._id}`);
       setActiveItems(res.data.activeItems || []);
       setSavedItems(res.data.savedItems || []);
-      
-      // Clear validation items on fresh fetch
       setValidationItems([]);
       setValidationMessage("");
     } catch (error) {
@@ -63,7 +66,6 @@ export default function Bag() {
     fetchCart(false);
   };
 
-  // Optimistic quantity updates with retry logic
   const handleUpdateQuantity = async (itemId: string, newQuantity: number, currentVersion: number, retryCount = 0) => {
     if (newQuantity < 1) return;
     
@@ -77,18 +79,12 @@ export default function Bag() {
         quantity: newQuantity,
         version: currentVersion
       });
-      // Refresh silently to sync any backend calculations or snapshots
       fetchCart(false);
     } catch (error: any) {
       console.warn("Quantity update error:", error?.response?.data);
-      
       if (error?.response?.status === 409) {
-        // Concurrency conflict / stock limit error
         const errMsg = error?.response?.data?.message || "Stock limit or conflict.";
-        
         if (error?.response?.data?.conflict && retryCount < 1) {
-          // Automatic retry once on version conflict by fetching latest first
-          console.log("Retrying quantity update once...");
           try {
             const freshCart = await axios.get(`${API_BASE_URL}/cart/${user?._id}`);
             const freshItem = freshCart.data.activeItems.find((i: any) => i._id === itemId);
@@ -100,17 +96,14 @@ export default function Bag() {
             console.error("Retry failed:", retryErr);
           }
         }
-        
         Alert.alert("Conflict or Stock Limit", errMsg);
       } else {
         Alert.alert("Error", "Could not update item quantity.");
       }
-      // Revert optimistic change on failure
       fetchCart(false);
     }
   };
 
-  // Remove Item Handler
   const handleRemoveItem = async (itemId: string) => {
     try {
       await axios.delete(`${API_BASE_URL}/cart/items/${itemId}`);
@@ -121,7 +114,6 @@ export default function Bag() {
     }
   };
 
-  // Move to Save for Later
   const handleSaveForLater = async (itemId: string) => {
     try {
       await axios.post(`${API_BASE_URL}/cart/items/${itemId}/save`);
@@ -132,7 +124,6 @@ export default function Bag() {
     }
   };
 
-  // Move Back to Cart
   const handleMoveToCart = async (itemId: string) => {
     try {
       await axios.post(`${API_BASE_URL}/cart/saved/${itemId}/move-to-cart`);
@@ -144,13 +135,11 @@ export default function Bag() {
     }
   };
 
-  // Accept Price Changes
   const handleAcceptPriceChanges = async () => {
     if (!user) return;
     try {
       await axios.post(`${API_BASE_URL}/cart/accept-prices`, { userId: user._id });
       setShowPriceModal(false);
-      // Re-run checkout validation
       handleCheckoutValidation();
     } catch (error) {
       console.error("Error accepting price changes:", error);
@@ -158,7 +147,6 @@ export default function Bag() {
     }
   };
 
-  // Place Order checkout validation
   const handleCheckoutValidation = async () => {
     if (!user) return;
     try {
@@ -171,20 +159,16 @@ export default function Bag() {
       setValidationItems(items || []);
 
       if (isValid) {
-        // Double check if there's any price change in items list
         const hasPriceChange = items.some((item: any) => item.status === "price_changed");
         if (hasPriceChange) {
           setIsValidationLoading(false);
           setShowPriceModal(true);
           return;
         }
-        
-        // Everything clean, navigate to checkout
         setIsValidationLoading(false);
         router.push("/checkout");
       } else {
         setIsValidationLoading(false);
-        // Formulate errors list
         const errors = items
           .filter((item: any) => item.status === "discontinued" || item.status === "out_of_stock")
           .map((item: any) => `${item.productName} (${item.status === "discontinued" ? "Discontinued" : "Out of stock"})`);
@@ -201,323 +185,378 @@ export default function Bag() {
 
   if (!user) {
     return (
-      <ThemedView style={styles.container} colorType="background">
-        <ThemedView style={[styles.header, { borderBottomColor: theme.colors.border }]} colorType="background">
-          <ThemedText type="title" style={styles.headerTitle}>Shopping Bag</ThemedText>
+      <ResponsiveContainer>
+        <ThemedView style={styles.container} colorType="background">
+          <ThemedView style={[styles.header, { borderBottomColor: theme.colors.border, padding: spacing.md }]} colorType="background">
+            <ThemedText type="title" style={[styles.headerTitle, { fontSize: scaleFont(22) }]}>Shopping Bag</ThemedText>
+          </ThemedView>
+          <ThemedView style={styles.emptyState} colorType="background">
+            <ShoppingBag size={64} color={theme.colors.primary} />
+            <ThemedText type="subtitle" style={[styles.emptyTitle, { fontSize: scaleFont(18) }]}>Please login to view your bag</ThemedText>
+            <TouchableOpacity
+              style={[styles.loginButton, { backgroundColor: theme.colors.primary }]}
+              onPress={() => router.push("/login")}
+            >
+              <ThemedText style={[styles.loginButtonText, { fontSize: scaleFont(16) }]} type="defaultSemiBold">LOGIN</ThemedText>
+            </TouchableOpacity>
+          </ThemedView>
         </ThemedView>
-        <ThemedView style={styles.emptyState} colorType="background">
-          <ShoppingBag size={64} color={theme.colors.primary} />
-          <ThemedText type="subtitle" style={styles.emptyTitle}>Please login to view your bag</ThemedText>
-          <TouchableOpacity
-            style={[styles.loginButton, { backgroundColor: theme.colors.primary }]}
-            onPress={() => router.push("/login")}
-          >
-            <ThemedText style={styles.loginButtonText} type="defaultSemiBold">LOGIN</ThemedText>
-          </TouchableOpacity>
-        </ThemedView>
-      </ThemedView>
+      </ResponsiveContainer>
     );
   }
 
-  // Calculate Subtotals based on prices snapped
+  // Calculate totals
   const subtotal = activeItems.reduce(
     (sum: number, item: any) => sum + item.priceAtAdded * item.quantity,
     0
   );
 
+  const renderCartItemsList = () => (
+    <>
+      <ThemedText type="defaultSemiBold" style={[styles.sectionTitle, { fontSize: scaleFont(16), paddingHorizontal: spacing.sm }]}>
+        Active Bag ({activeItems.length})
+      </ThemedText>
+
+      {activeItems.length === 0 ? (
+        <View style={[styles.inlineEmptyState, { margin: spacing.sm }]}>
+          <ShoppingBag size={40} color={theme.colors.textMuted} />
+          <ThemedText type="default" colorType="textMuted" style={[styles.emptyText, { fontSize: scaleFont(14) }]}>
+            Your active shopping bag is empty.
+          </ThemedText>
+        </View>
+      ) : (
+        activeItems.map((item: any) => {
+          const vItem = validationItems.find((v: any) => v.itemId === item._id);
+          const isDiscontinued = vItem?.status === "discontinued" || item.productId?.isDiscontinued;
+          const isOutOfStock = vItem?.status === "out_of_stock";
+          const isPriceChanged = vItem?.status === "price_changed";
+          const lowStock = item.productId && item.productId.stock > 0 && item.productId.stock <= 5;
+          const availableStock = item.productId ? item.productId.stock : 0;
+
+          return (
+            <ThemedView
+              key={item._id}
+              style={[
+                styles.bagItem,
+                { backgroundColor: theme.colors.card, shadowColor: theme.colors.text },
+                (isDiscontinued || isOutOfStock) && styles.invalidItemBorder
+              ]}
+              colorType="card"
+            >
+              <View style={styles.imageWrapper}>
+                <Image
+                  source={{ uri: item.productImageAtAdded || "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&auto=format&fit=crop" }}
+                  style={styles.itemImage}
+                  resizeMode="cover"
+                />
+                {isDiscontinued && (
+                  <View style={styles.statusOverlay}>
+                    <Text style={styles.statusOverlayText}>DISCONTINUED</Text>
+                  </View>
+                )}
+                {isOutOfStock && (
+                  <View style={styles.statusOverlay}>
+                    <Text style={styles.statusOverlayText}>OUT OF STOCK</Text>
+                  </View>
+                )}
+              </View>
+
+              <ThemedView style={styles.itemInfo} colorType="card">
+                <ThemedText type="default" colorType="textMuted" style={[styles.brandName, { fontSize: scaleFont(11) }]}>
+                  {item.brandAtAdded}
+                </ThemedText>
+                <ThemedText type="defaultSemiBold" numberOfLines={1} style={[styles.itemName, { fontSize: scaleFont(14) }]}>
+                  {item.productNameAtAdded}
+                </ThemedText>
+                <ThemedText type="default" colorType="textMuted" style={[styles.itemSize, { fontSize: scaleFont(12) }]}>
+                  Size: {item.size}
+                </ThemedText>
+
+                <View style={styles.priceContainer}>
+                  {isPriceChanged ? (
+                    <>
+                      <Text style={styles.originalPrice}>₹{item.priceAtAdded}</Text>
+                      <Text style={styles.newPrice}>₹{vItem.currentPrice}</Text>
+                    </>
+                  ) : (
+                    <ThemedText type="defaultSemiBold" style={[styles.itemPrice, { fontSize: scaleFont(14) }]}>
+                      ₹{item.priceAtAdded}
+                    </ThemedText>
+                  )}
+                </View>
+
+                {lowStock && !isOutOfStock && !isDiscontinued && (
+                  <Text style={[styles.stockWarning, { fontSize: scaleFont(11) }]}>
+                    Only {availableStock} left!
+                  </Text>
+                )}
+
+                <View style={styles.quantityContainer}>
+                  <TouchableOpacity
+                    style={[styles.quantityButton, { backgroundColor: theme.colors.surface }]}
+                    onPress={() => handleUpdateQuantity(item._id, item.quantity - 1, item.version)}
+                    disabled={item.quantity <= 1 || isDiscontinued}
+                  >
+                    <Minus size={16} color={theme.colors.text} />
+                  </TouchableOpacity>
+                  
+                  <ThemedText style={[styles.quantity, { fontSize: scaleFont(14) }]} type="defaultSemiBold">
+                    {item.quantity}
+                  </ThemedText>
+                  
+                  <TouchableOpacity
+                    style={[styles.quantityButton, { backgroundColor: theme.colors.surface }]}
+                    onPress={() => handleUpdateQuantity(item._id, item.quantity + 1, item.version)}
+                    disabled={isDiscontinued || isOutOfStock}
+                  >
+                    <Plus size={16} color={theme.colors.text} />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.actionIconButton}
+                    onPress={() => handleSaveForLater(item._id)}
+                  >
+                    <Bookmark size={20} color={theme.colors.textMuted} />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.removeButton}
+                    onPress={() => handleRemoveItem(item._id)}
+                  >
+                    <Trash2 size={20} color={theme.colors.primary} />
+                  </TouchableOpacity>
+                </View>
+              </ThemedView>
+            </ThemedView>
+          );
+        })
+      )}
+
+      {/* SAVE FOR LATER SECTION */}
+      <ThemedText type="defaultSemiBold" style={[styles.sectionTitle, { fontSize: scaleFont(16), marginTop: spacing.md, paddingHorizontal: spacing.sm }]}>
+        Saved For Later ({savedItems.length})
+      </ThemedText>
+
+      {savedItems.length === 0 ? (
+        <View style={[styles.inlineEmptyState, { margin: spacing.sm }]}>
+          <Bookmark size={40} color={theme.colors.textMuted} />
+          <ThemedText type="default" colorType="textMuted" style={[styles.emptyText, { fontSize: scaleFont(14) }]}>
+            No items saved for later.
+          </ThemedText>
+        </View>
+      ) : (
+        savedItems.map((item: any) => {
+          const product = item.productId;
+          const outOfStock = product && product.stock === 0;
+          const discontinued = product && product.isDiscontinued;
+
+          return (
+            <ThemedView
+              key={item._id}
+              style={[styles.bagItem, { backgroundColor: theme.colors.card, opacity: 0.85 }]}
+              colorType="card"
+            >
+              <Image
+                source={{ uri: product?.images[0] || "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&auto=format&fit=crop" }}
+                style={styles.itemImage}
+                resizeMode="cover"
+              />
+              
+              <ThemedView style={styles.itemInfo} colorType="card">
+                <ThemedText type="default" colorType="textMuted" style={[styles.brandName, { fontSize: scaleFont(11) }]}>
+                  {product?.brand}
+                </ThemedText>
+                <ThemedText type="defaultSemiBold" numberOfLines={1} style={[styles.itemName, { fontSize: scaleFont(14) }]}>
+                  {product?.name}
+                </ThemedText>
+                <ThemedText type="default" colorType="textMuted" style={[styles.itemSize, { fontSize: scaleFont(12) }]}>
+                  Size: {item.size}
+                </ThemedText>
+                <ThemedText type="defaultSemiBold" style={[styles.itemPrice, { fontSize: scaleFont(14) }]}>
+                  ₹{product?.price}
+                </ThemedText>
+
+                {discontinued ? (
+                  <Text style={[styles.errorText, { fontSize: scaleFont(12) }]}>Product Discontinued</Text>
+                ) : outOfStock ? (
+                  <Text style={[styles.errorText, { fontSize: scaleFont(12) }]}>Out of stock</Text>
+                ) : null}
+
+                <View style={styles.savedActions}>
+                  <TouchableOpacity
+                    style={[
+                      styles.moveToBagButton, 
+                      { borderColor: theme.colors.primary },
+                      (discontinued || outOfStock) && styles.disabledMoveButton
+                    ]}
+                    onPress={() => handleMoveToCart(item._id)}
+                    disabled={discontinued || outOfStock}
+                  >
+                    <ThemedText style={[styles.moveToBagText, { color: theme.colors.primary, fontSize: scaleFont(11) }]}>
+                      MOVE TO BAG
+                    </ThemedText>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.removeSavedButton}
+                    onPress={() => handleRemoveItem(item._id)}
+                  >
+                    <Trash2 size={20} color={theme.colors.textMuted} />
+                  </TouchableOpacity>
+                </View>
+              </ThemedView>
+            </ThemedView>
+          );
+        })
+      )}
+    </>
+  );
+
+  const renderSummaryCard = () => (
+    <ThemedView style={[styles.summaryCard, { backgroundColor: theme.colors.card, borderColor: theme.colors.border, padding: spacing.md }]} colorType="card">
+      <ThemedText type="subtitle" style={[styles.summaryTitle, { fontSize: scaleFont(16) }]}>COUPONS & DETAILS</ThemedText>
+      
+      <View style={styles.divider} />
+      
+      <View style={styles.summaryRow}>
+        <ThemedText type="default" colorType="textMuted" style={{ fontSize: scaleFont(14) }}>Subtotal</ThemedText>
+        <ThemedText type="defaultSemiBold" style={{ fontSize: scaleFont(14) }}>₹{subtotal}</ThemedText>
+      </View>
+      <View style={styles.summaryRow}>
+        <ThemedText type="default" colorType="textMuted" style={{ fontSize: scaleFont(14) }}>Shipping Fee</ThemedText>
+        <ThemedText type="defaultSemiBold" style={{ fontSize: scaleFont(14), color: "green" }}>FREE</ThemedText>
+      </View>
+      
+      <View style={[styles.divider, { marginVertical: 10 }]} />
+      
+      <View style={styles.summaryRow}>
+        <ThemedText type="subtitle" style={{ fontSize: scaleFont(16) }}>Total Amount</ThemedText>
+        <ThemedText type="subtitle" style={{ fontSize: scaleFont(16), color: theme.colors.primary }}>₹{subtotal}</ThemedText>
+      </View>
+
+      <TouchableOpacity
+        style={[styles.checkoutButton, { backgroundColor: theme.colors.primary, marginTop: spacing.md }]}
+        onPress={handleCheckoutValidation}
+        disabled={isValidationLoading || activeItems.length === 0}
+      >
+        {isValidationLoading ? (
+          <ActivityIndicator size="small" color="#fff" />
+        ) : (
+          <ThemedText style={[styles.checkoutButtonText, { fontSize: scaleFont(16) }]} type="defaultSemiBold">
+            PLACE ORDER
+          </ThemedText>
+        )}
+      </TouchableOpacity>
+    </ThemedView>
+  );
+
   return (
-    <ThemedView style={styles.container} colorType="background">
-      <ThemedView style={[styles.header, { borderBottomColor: theme.colors.border }]} colorType="background">
-        <ThemedText type="title" style={styles.headerTitle}>Shopping Bag</ThemedText>
+    <ResponsiveContainer>
+      <ThemedView style={[styles.header, { borderBottomColor: theme.colors.border, padding: spacing.md }]} colorType="background">
+        <ThemedText type="title" style={[styles.headerTitle, { fontSize: scaleFont(22) }]}>Shopping Bag</ThemedText>
       </ThemedView>
 
-      {/* Validation Warning Alert */}
       {validationMessage ? (
         <View style={styles.validationBanner}>
-          <AlertTriangle size={18} color="#fff" />
+          <AlertTriangle size={18} color="#fff" style={{ marginRight: 8 }} />
           <Text style={styles.validationBannerText}>{validationMessage}</Text>
         </View>
       ) : null}
 
-      <ScrollView
-        style={styles.content}
-        refreshControl={
-          <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[theme.colors.primary]} />
-        }
-      >
-        {isLoading ? (
-          <View style={styles.skeletonContainer}>
-            <ActivityIndicator size="large" color={theme.colors.primary} style={{ marginTop: 50 }} />
-          </View>
-        ) : (
-          <>
-            {/* ACTIVE SHOPPING BAG SECTION */}
-            <ThemedText type="defaultSemiBold" style={styles.sectionTitle}>
-              Active Bag ({activeItems.length})
-            </ThemedText>
-
-            {activeItems.length === 0 ? (
-              <View style={styles.inlineEmptyState}>
-                <ShoppingBag size={40} color={theme.colors.textMuted} />
-                <ThemedText type="default" colorType="textMuted" style={styles.emptyText}>
-                  Your active shopping bag is empty.
-                </ThemedText>
+      {isLoading ? (
+        <View style={styles.skeletonContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+        </View>
+      ) : (
+        <View style={{ flex: 1 }}>
+          {isTablet ? (
+            /* Tablet Split Columns Layout */
+            <View style={[styles.splitLayout, { padding: spacing.md }]}>
+              <ScrollView 
+                style={styles.leftColumn}
+                showsVerticalScrollIndicator={false}
+                refreshControl={
+                  <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[theme.colors.primary]} />
+                }
+              >
+                {renderCartItemsList()}
+              </ScrollView>
+              
+              <View style={styles.rightColumn}>
+                {renderSummaryCard()}
               </View>
-            ) : (
-              activeItems.map((item: any) => {
-                // Determine item validation details
-                const vItem = validationItems.find((v: any) => v.itemId === item._id);
-                const isDiscontinued = vItem?.status === "discontinued" || item.productId?.isDiscontinued;
-                const isOutOfStock = vItem?.status === "out_of_stock";
-                const isPriceChanged = vItem?.status === "price_changed";
-                const lowStock = item.productId && item.productId.stock > 0 && item.productId.stock <= 5;
-                const availableStock = item.productId ? item.productId.stock : 0;
+            </View>
+          ) : (
+            /* Phone Stacked Scrolling Layout */
+            <View style={{ flex: 1 }}>
+              <ScrollView
+                style={styles.content}
+                showsVerticalScrollIndicator={false}
+                refreshControl={
+                  <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[theme.colors.primary]} />
+                }
+              >
+                <View style={{ padding: spacing.sm }}>
+                  {renderCartItemsList()}
+                </View>
+              </ScrollView>
 
-                return (
-                  <ThemedView
-                    key={item._id}
-                    style={[
-                      styles.bagItem,
-                      { backgroundColor: theme.colors.card, shadowColor: theme.colors.text },
-                      (isDiscontinued || isOutOfStock) && styles.invalidItemBorder
-                    ]}
-                    colorType="card"
+              {activeItems.length > 0 && (
+                <ThemedView style={[styles.footer, { borderTopColor: theme.colors.border, padding: spacing.sm }]} colorType="card">
+                  <View style={styles.totalContainer}>
+                    <ThemedText type="default" colorType="textMuted" style={{ fontSize: scaleFont(14) }}>
+                      Total Amount
+                    </ThemedText>
+                    <ThemedText type="subtitle" style={{ fontSize: scaleFont(18) }}>
+                      ₹{subtotal}
+                    </ThemedText>
+                  </View>
+                  
+                  <TouchableOpacity
+                    style={[styles.checkoutButton, { backgroundColor: theme.colors.primary }]}
+                    onPress={handleCheckoutValidation}
+                    disabled={isValidationLoading}
                   >
-                    <Image
-                      source={{ uri: item.productImageAtAdded || "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&auto=format&fit=crop" }}
-                      style={styles.itemImage}
-                    />
-                    
-                    {/* Discontinued / Out of stock overlays */}
-                    {isDiscontinued && (
-                      <View style={styles.statusOverlay}>
-                        <Text style={styles.statusOverlayText}>DISCONTINUED</Text>
-                      </View>
+                    {isValidationLoading ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <ThemedText style={[styles.checkoutButtonText, { fontSize: scaleFont(16) }]} type="defaultSemiBold">
+                        PLACE ORDER
+                      </ThemedText>
                     )}
-                    {isOutOfStock && (
-                      <View style={styles.statusOverlay}>
-                        <Text style={styles.statusOverlayText}>OUT OF STOCK</Text>
-                      </View>
-                    )}
-
-                    <ThemedView style={styles.itemInfo} colorType="card">
-                      <ThemedText type="default" colorType="textMuted" style={styles.brandName}>
-                        {item.brandAtAdded}
-                      </ThemedText>
-                      <ThemedText type="defaultSemiBold" numberOfLines={1} style={styles.itemName}>
-                        {item.productNameAtAdded}
-                      </ThemedText>
-                      <ThemedText type="default" colorType="textMuted" style={styles.itemSize}>
-                        Size: {item.size}
-                      </ThemedText>
-
-                      {/* Price rendering with change validation warning */}
-                      <View style={styles.priceContainer}>
-                        {isPriceChanged ? (
-                          <>
-                            <Text style={styles.originalPrice}>₹{item.priceAtAdded}</Text>
-                            <Text style={styles.newPrice}>₹{vItem.currentPrice} *Price updated*</Text>
-                          </>
-                        ) : (
-                          <ThemedText type="defaultSemiBold" style={styles.itemPrice}>
-                            ₹{item.priceAtAdded}
-                          </ThemedText>
-                        )}
-                      </View>
-
-                      {/* Stock limit badges */}
-                      {lowStock && !isOutOfStock && !isDiscontinued && (
-                        <Text style={styles.stockWarning}>
-                          Only {availableStock} left in stock!
-                        </Text>
-                      )}
-
-                      <View style={styles.quantityContainer}>
-                        {/* Decrement Button */}
-                        <TouchableOpacity
-                          style={[styles.quantityButton, { backgroundColor: theme.colors.surface }]}
-                          onPress={() => handleUpdateQuantity(item._id, item.quantity - 1, item.version)}
-                          disabled={item.quantity <= 1 || isDiscontinued}
-                        >
-                          <Minus size={16} color={theme.colors.text} />
-                        </TouchableOpacity>
-                        
-                        <ThemedText style={styles.quantity} type="defaultSemiBold">
-                          {item.quantity}
-                        </ThemedText>
-                        
-                        {/* Increment Button */}
-                        <TouchableOpacity
-                          style={[styles.quantityButton, { backgroundColor: theme.colors.surface }]}
-                          onPress={() => handleUpdateQuantity(item._id, item.quantity + 1, item.version)}
-                          disabled={isDiscontinued || isOutOfStock}
-                        >
-                          <Plus size={16} color={theme.colors.text} />
-                        </TouchableOpacity>
-
-                        {/* Save for later icon button */}
-                        <TouchableOpacity
-                          style={styles.actionIconButton}
-                          onPress={() => handleSaveForLater(item._id)}
-                        >
-                          <Bookmark size={20} color={theme.colors.textMuted} />
-                        </TouchableOpacity>
-
-                        {/* Trash Button */}
-                        <TouchableOpacity
-                          style={styles.removeButton}
-                          onPress={() => handleRemoveItem(item._id)}
-                        >
-                          <Trash2 size={20} color={theme.colors.primary} />
-                        </TouchableOpacity>
-                      </View>
-                    </ThemedView>
-                  </ThemedView>
-                );
-              })
-            )}
-
-            {/* SAVE FOR LATER SECTION */}
-            <ThemedText type="defaultSemiBold" style={[styles.sectionTitle, { marginTop: 30 }]}>
-              Saved For Later ({savedItems.length})
-            </ThemedText>
-
-            {savedItems.length === 0 ? (
-              <View style={styles.inlineEmptyState}>
-                <Bookmark size={40} color={theme.colors.textMuted} />
-                <ThemedText type="default" colorType="textMuted" style={styles.emptyText}>
-                  No items saved for later.
-                </ThemedText>
-              </View>
-            ) : (
-              savedItems.map((item: any) => {
-                const product = item.productId;
-                const outOfStock = product && product.stock === 0;
-                const discontinued = product && product.isDiscontinued;
-
-                return (
-                  <ThemedView
-                    key={item._id}
-                    style={[styles.bagItem, { backgroundColor: theme.colors.card, opacity: 0.8 }]}
-                    colorType="card"
-                  >
-                    <Image
-                      source={{ uri: product?.images[0] || "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&auto=format&fit=crop" }}
-                      style={styles.itemImage}
-                    />
-                    
-                    <ThemedView style={styles.itemInfo} colorType="card">
-                      <ThemedText type="default" colorType="textMuted" style={styles.brandName}>
-                        {product?.brand}
-                      </ThemedText>
-                      <ThemedText type="defaultSemiBold" numberOfLines={1} style={styles.itemName}>
-                        {product?.name}
-                      </ThemedText>
-                      <ThemedText type="default" colorType="textMuted" style={styles.itemSize}>
-                        Size: {item.size}
-                      </ThemedText>
-                      <ThemedText type="defaultSemiBold" style={styles.itemPrice}>
-                        ₹{product?.price}
-                      </ThemedText>
-
-                      {/* Stock availability overlays */}
-                      {discontinued ? (
-                        <Text style={styles.errorText}>Product Discontinued</Text>
-                      ) : outOfStock ? (
-                        <Text style={styles.errorText}>Out of stock</Text>
-                      ) : null}
-
-                      <View style={styles.savedActions}>
-                        <TouchableOpacity
-                          style={[
-                            styles.moveToBagButton, 
-                            { borderColor: theme.colors.primary },
-                            (discontinued || outOfStock) && styles.disabledMoveButton
-                          ]}
-                          onPress={() => handleMoveToCart(item._id)}
-                          disabled={discontinued || outOfStock}
-                        >
-                          <ThemedText style={[styles.moveToBagText, { color: theme.colors.primary }]}>
-                            MOVE TO BAG
-                          </ThemedText>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                          style={styles.removeSavedButton}
-                          onPress={() => handleRemoveItem(item._id)}
-                        >
-                          <Trash2 size={20} color={theme.colors.textMuted} />
-                        </TouchableOpacity>
-                      </View>
-                    </ThemedView>
-                  </ThemedView>
-                );
-              })
-            )}
-          </>
-        )}
-      </ScrollView>
-
-      {/* FOOTER & PLACE ORDER BUTTON */}
-      {activeItems.length > 0 && !isLoading && (
-        <ThemedView style={[styles.footer, { borderTopColor: theme.colors.border }]} colorType="card">
-          <View style={styles.totalContainer}>
-            <ThemedText type="default" colorType="textMuted" style={styles.totalLabel}>
-              Total Amount
-            </ThemedText>
-            <ThemedText type="subtitle" style={styles.totalAmount}>
-              ₹{subtotal}
-            </ThemedText>
-          </View>
-          
-          <TouchableOpacity
-            style={[styles.checkoutButton, { backgroundColor: theme.colors.primary }]}
-            onPress={handleCheckoutValidation}
-            disabled={isValidationLoading}
-          >
-            {isValidationLoading ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <ThemedText style={styles.checkoutButtonText} type="defaultSemiBold">
-                PLACE ORDER
-              </ThemedText>
-            )}
-          </TouchableOpacity>
-        </ThemedView>
+                  </TouchableOpacity>
+                </ThemedView>
+              )}
+            </View>
+          )}
+        </View>
       )}
 
-      {/* PRICE CHANGE ALERT MODAL */}
-      <Modal
-        animationType="fade"
-        transparent={true}
+      {/* Responsive Price Modal Warning */}
+      <ResponsiveModal
         visible={showPriceModal}
-        onRequestClose={() => setShowPriceModal(false)}
+        onClose={() => setShowPriceModal(false)}
+        title="Price Change Detected"
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <AlertTriangle size={48} color="#f0ad4e" style={{ alignSelf: "center", marginBottom: 15 }} />
-            <Text style={styles.modalTitle}>Price Change Detected</Text>
-            <Text style={styles.modalBody}>
-              Prices for some items in your active shopping bag have changed. Please accept the price changes to proceed with checkout.
-            </Text>
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.modalCancel]}
-                onPress={() => setShowPriceModal(false)}
-              >
-                <Text style={styles.modalCancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: theme.colors.primary }]}
-                onPress={handleAcceptPriceChanges}
-              >
-                <Text style={styles.modalAcceptText}>Accept Changes</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+        <Text style={[styles.modalBody, { fontSize: scaleFont(14) }]}>
+          Prices for some items in your active shopping bag have changed. Please accept the price changes to proceed with checkout.
+        </Text>
+        <View style={styles.modalButtons}>
+          <TouchableOpacity
+            style={[styles.modalButton, styles.modalCancel]}
+            onPress={() => setShowPriceModal(false)}
+          >
+            <Text style={styles.modalCancelText}>Cancel</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.modalButton, { backgroundColor: theme.colors.primary }]}
+            onPress={handleAcceptPriceChanges}
+          >
+            <Text style={styles.modalAcceptText}>Accept Changes</Text>
+          </TouchableOpacity>
         </View>
-      </Modal>
-    </ThemedView>
+      </ResponsiveModal>
+    </ResponsiveContainer>
   );
 }
 
@@ -526,12 +565,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    padding: 15,
     paddingTop: 50,
     borderBottomWidth: 1,
   },
   headerTitle: {
-    fontSize: 22,
+    fontWeight: "bold",
   },
   validationBanner: {
     backgroundColor: "#d9534f",
@@ -542,16 +580,13 @@ const styles = StyleSheet.create({
   validationBannerText: {
     color: "#fff",
     fontSize: 13,
-    marginLeft: 8,
     flex: 1,
     fontWeight: "500",
   },
   content: {
     flex: 1,
-    padding: 15,
   },
   sectionTitle: {
-    fontSize: 16,
     marginBottom: 10,
     fontWeight: "bold",
   },
@@ -572,7 +607,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     marginTop: 10,
-    fontSize: 14,
   },
   emptyState: {
     flex: 1,
@@ -593,18 +627,11 @@ const styles = StyleSheet.create({
   },
   loginButtonText: {
     color: "#fff",
-    fontSize: 16,
   },
   bagItem: {
     flexDirection: "row",
     borderRadius: 10,
     marginBottom: 15,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
     elevation: 3,
     overflow: "hidden",
     position: "relative",
@@ -613,17 +640,22 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: "#d9534f",
   },
-  itemImage: {
+  imageWrapper: {
     width: 100,
     height: 130,
+    position: "relative",
+  },
+  itemImage: {
+    width: "100%",
+    height: "100%",
   },
   statusOverlay: {
     position: "absolute",
     left: 0,
     top: 0,
-    width: 100,
-    height: 130,
-    backgroundColor: "rgba(0,0,0,0.6)",
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.65)",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -638,15 +670,12 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   brandName: {
-    fontSize: 11,
     marginBottom: 2,
   },
   itemName: {
-    fontSize: 14,
     marginBottom: 5,
   },
   itemSize: {
-    fontSize: 12,
     marginBottom: 5,
   },
   priceContainer: {
@@ -654,9 +683,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 8,
   },
-  itemPrice: {
-    fontSize: 14,
-  },
+  itemPrice: {},
   originalPrice: {
     textDecorationLine: "line-through",
     color: "#999",
@@ -670,13 +697,11 @@ const styles = StyleSheet.create({
   },
   stockWarning: {
     color: "#f0ad4e",
-    fontSize: 11,
     fontWeight: "600",
     marginBottom: 8,
   },
   errorText: {
     color: "#d9534f",
-    fontSize: 12,
     fontWeight: "600",
     marginTop: 5,
     marginBottom: 5,
@@ -695,7 +720,6 @@ const styles = StyleSheet.create({
   },
   quantity: {
     marginHorizontal: 12,
-    fontSize: 14,
   },
   actionIconButton: {
     marginLeft: 15,
@@ -721,7 +745,6 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   moveToBagText: {
-    fontSize: 11,
     fontWeight: "bold",
   },
   removeSavedButton: {
@@ -729,7 +752,6 @@ const styles = StyleSheet.create({
     padding: 5,
   },
   footer: {
-    padding: 15,
     borderTopWidth: 1,
   },
   totalContainer: {
@@ -738,12 +760,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 15,
   },
-  totalLabel: {
-    fontSize: 14,
-  },
-  totalAmount: {
-    fontSize: 18,
-  },
   checkoutButton: {
     padding: 15,
     borderRadius: 10,
@@ -751,37 +767,41 @@ const styles = StyleSheet.create({
   },
   checkoutButtonText: {
     color: "#fff",
-    fontSize: 16,
   },
-  // Modal Styles
-  modalOverlay: {
+  // Split layouts
+  splitLayout: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
+    flexDirection: "row",
+    gap: 20,
   },
-  modalContent: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 20,
-    width: "100%",
-    maxWidth: 340,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+  leftColumn: {
+    flex: 1.5,
   },
-  modalTitle: {
-    fontSize: 18,
+  rightColumn: {
+    flex: 1,
+    maxWidth: 400,
+  },
+  summaryCard: {
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  summaryTitle: {
     fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 10,
-    color: "#333",
+    marginBottom: 12,
   },
+  divider: {
+    height: 1,
+    backgroundColor: "#eee",
+    marginVertical: 12,
+  },
+  summaryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginVertical: 6,
+  },
+  // Modal buttons
   modalBody: {
-    fontSize: 14,
     color: "#666",
     textAlign: "center",
     marginBottom: 20,

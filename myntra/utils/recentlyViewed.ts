@@ -17,7 +17,7 @@ import { API_BASE_URL } from "../constants/Api";
 
 const STORAGE_KEY = "recently_viewed_products";
 const API_BASE = `${API_BASE_URL}/recently-viewed`; // matches backend route
-const MAX_ITEMS = 10;
+const MAX_ITEMS = 50;
 
 /**
  * Helper function to map server-side populated responses to the local ViewedProduct interface.

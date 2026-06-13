@@ -16,70 +16,8 @@ import { useAuth } from "@/context/AuthContext";
 import { addRecentlyViewed } from "@/utils/recentlyViewed";
 import axios from "axios";
 import { API_BASE_URL } from "@/constants/Api";
-
-// Mock product data - in a real app, this would come from an API
-// const products = {
-//   "1": {
-//     id: 1,
-//     name: "Casual White T-Shirt",
-//     brand: "Roadster",
-//     price: 499,
-//     discount: "60% OFF",
-//     description:
-//       "Classic white t-shirt made from premium cotton. Perfect for everyday wear with a comfortable regular fit.",
-//     sizes: ["S", "M", "L", "XL"],
-//     images: [
-//       "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&auto=format&fit=crop",
-//       "https://images.unsplash.com/photo-1562157873-818bc0726f68?w=500&auto=format&fit=crop",
-//       "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=500&auto=format&fit=crop",
-//     ],
-//   },
-//   "2": {
-//     id: 2,
-//     name: "Denim Jacket",
-//     brand: "Levis",
-//     price: 2499,
-//     discount: "40% OFF",
-//     description:
-//       "Classic denim jacket with a modern twist. Features premium quality denim and comfortable fit.",
-//     sizes: ["S", "M", "L", "XL"],
-//     images: [
-//       "https://images.unsplash.com/photo-1523205771623-e0faa4d2813d?w=500&auto=format&fit=crop",
-//       "https://images.unsplash.com/photo-1542272604-787c3835535d?w=500&auto=format&fit=crop",
-//       "https://images.unsplash.com/photo-1601933973783-43cf8a7d4c5f?w=500&auto=format&fit=crop",
-//     ],
-//   },
-//   "3": {
-//     id: 3,
-//     name: "Summer Dress",
-//     brand: "ONLY",
-//     price: 1299,
-//     discount: "50% OFF",
-//     description:
-//       "Flowy summer dress perfect for warm weather. Made from lightweight fabric with a flattering cut.",
-//     sizes: ["XS", "S", "M", "L"],
-//     images: [
-//       "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=500&auto=format&fit=crop",
-//       "https://images.unsplash.com/photo-1623609163859-ca93c959b98a?w=500&auto=format&fit=crop",
-//       "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=500&auto=format&fit=crop",
-//     ],
-//   },
-//   "4": {
-//     id: 4,
-//     name: "Classic Sneakers",
-//     brand: "Nike",
-//     price: 3499,
-//     discount: "30% OFF",
-//     description:
-//       "Versatile sneakers that combine style and comfort. Perfect for both casual wear and light exercise.",
-//     sizes: ["UK6", "UK7", "UK8", "UK9", "UK10"],
-//     images: [
-//       "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&auto=format&fit=crop",
-//       "https://images.unsplash.com/photo-1607522370275-f14206abe5d3?w=500&auto=format&fit=crop",
-//       "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=500&auto=format&fit=crop",
-//     ],
-//   },
-// };
+import { useResponsive } from "@/src/hooks/useResponsive";
+import ResponsiveContainer from "@/src/components/responsive/ResponsiveContainer";
 
 export default function ProductDetails() {
   const { id } = useLocalSearchParams();
@@ -94,46 +32,102 @@ export default function ProductDetails() {
   const { user } = useAuth();
   const [product, setproduct] = useState<any>(null);
   const [iswishlist, setiswishlist] = useState(false);
-  useEffect(() => {
-    // Simulate loading time
 
+  const { scaleFont, spacing, isTablet } = useResponsive();
+  const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [isRecsLoading, setIsRecsLoading] = useState(false);
+
+  useEffect(() => {
     const fetchproduct = async () => {
       try {
         setIsLoading(true);
-        const product = await axios.get(
-          `${API_BASE_URL}/product/${id}`
-        );
+        const product = await axios.get(`${API_BASE_URL}/product/${id}`);
         setproduct(product.data);
         if (product.data) {
           addRecentlyViewed(product.data, user?._id);
         }
       } catch (error) {
         console.log(error);
-        setIsLoading(false);
       } finally {
         setIsLoading(false);
       }
     };
     fetchproduct();
-  }, []);
+  }, [id, user?._id]);
 
   useEffect(() => {
-    // Start auto-scroll
-    startAutoScroll();
+    const fetchRecommendations = async () => {
+      try {
+        setIsRecsLoading(true);
+        const url = `${API_BASE_URL}/recommendations?productId=${id}${user?._id ? `&userId=${user._id}` : ""}`;
+        const res = await axios.get(url);
+        if (res.data && res.data.length > 0) {
+          setRecommendations(res.data);
+          // Track impressions
+          res.data.forEach((prod: any) => {
+            axios.post(`${API_BASE_URL}/recommendations/event`, {
+              userId: user?._id || null,
+              productId: prod._id,
+              eventType: "impression",
+              algorithmVersion: "v1"
+            }).catch(() => {});
+          });
+        } else {
+          // Fallback to general products
+          const fallbackRes = await axios.get(`${API_BASE_URL}/product`);
+          setRecommendations(fallbackRes.data.slice(0, 10));
+        }
+      } catch (err) {
+        console.error("Failed to fetch recommendations, trying fallback...", err);
+        try {
+          const fallbackRes = await axios.get(`${API_BASE_URL}/product`);
+          setRecommendations(fallbackRes.data.slice(0, 10));
+        } catch (fallbackErr) {
+          console.error("Ultimate fallback failed:", fallbackErr);
+        }
+      } finally {
+        setIsRecsLoading(false);
+      }
+    };
 
+    if (id) {
+      fetchRecommendations();
+    }
+  }, [id, user?._id]);
+
+  const handleRecommendationPress = async (prod: any) => {
+    try {
+      await axios.post(`${API_BASE_URL}/recommendations/event`, {
+        userId: user?._id || null,
+        productId: prod._id,
+        eventType: "click",
+        algorithmVersion: "v1"
+      });
+    } catch (e) {
+      // Ignore click tracking failures
+    }
+    router.push(`/product/${prod._id}`);
+  };
+
+  useEffect(() => {
+    startAutoScroll();
     return () => {
       if (autoScrollTimer.current) {
         clearInterval(autoScrollTimer.current);
       }
     };
-  }, []);
+  }, [product, currentImageIndex]);
 
   const startAutoScroll = () => {
+    if (autoScrollTimer.current) {
+      clearInterval(autoScrollTimer.current);
+    }
     autoScrollTimer.current = setInterval(() => {
       if (product && scrollViewRef.current) {
         const nextIndex = (currentImageIndex + 1) % product.images.length;
+        const scrollWidth = isTablet ? Math.min(width, 1280) * 0.45 : width; // matches layout image column width
         scrollViewRef.current.scrollTo({
-          x: nextIndex * width,
+          x: nextIndex * scrollWidth,
           animated: true,
         });
         setCurrentImageIndex(nextIndex);
@@ -141,13 +135,26 @@ export default function ProductDetails() {
     }, 3000);
   };
 
-  if (!product) {
+  if (isLoading) {
     return (
-      <View style={styles.container}>
-        <Text>Product not found</Text>
-      </View>
+      <ResponsiveContainer>
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator size="large" color="#ff3f6c" />
+        </View>
+      </ResponsiveContainer>
     );
   }
+
+  if (!product) {
+    return (
+      <ResponsiveContainer>
+        <View style={styles.container}>
+          <Text style={{ fontSize: scaleFont(16), textAlign: "center", marginTop: 50 }}>Product not found</Text>
+        </View>
+      </ResponsiveContainer>
+    );
+  }
+
   const handleAddwishlist = async () => {
     if (!user) {
       router.push("/login");
@@ -165,6 +172,7 @@ export default function ProductDetails() {
       console.log(error);
     }
   };
+
   const handleAddToBag = async () => {
     if (!user) {
       router.push("/login");
@@ -172,7 +180,6 @@ export default function ProductDetails() {
     }
 
     if (!selectedSize) {
-      // In a real app, show a proper error message
       alert("Please select a size");
       return;
     }
@@ -185,73 +192,68 @@ export default function ProductDetails() {
         quantity: 1,
       });
       router.push("/bag");
-    } catch (error) {
+    } catch (error: any) {
       console.log(error);
+      alert(error?.response?.data?.message || "Could not add item to bag. Price or stock might have changed.");
     } finally {
       setLoading(false);
     }
-    // In a real app, this would add the item to the cart in your state management solution
   };
 
   const handleScroll = (event: any) => {
     const contentOffset = event.nativeEvent.contentOffset;
-    const imageIndex = Math.round(contentOffset.x / width);
+    const scrollWidth = isTablet ? Math.min(width, 1280) * 0.45 : width;
+    const imageIndex = Math.round(contentOffset.x / scrollWidth);
     setCurrentImageIndex(imageIndex);
-
-    // Reset auto-scroll timer when user manually scrolls
-    if (autoScrollTimer.current) {
-      clearInterval(autoScrollTimer.current);
-      startAutoScroll();
-    }
   };
 
-  if (isLoading) {
-    return (
-      <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="#ff3f6c" />
-      </View>
-    );
-  }
+  const imageColWidth = isTablet ? Math.min(width, 1280) * 0.45 : width;
 
   return (
-    <View style={styles.container}>
-      <ScrollView>
-        <View style={styles.carouselContainer}>
-          <ScrollView
-            ref={scrollViewRef}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
-          >
-            {product.images.map((image: any, index: any) => (
-              <Image
-                key={index}
-                source={{ uri: image }}
-                style={[styles.productImage, { width }]}
-                resizeMode="cover"
-              />
-            ))}
-          </ScrollView>
-          <View style={styles.pagination}>
-            {product.images.map((_: any, index: any) => (
-              <View
-                key={index}
-                style={[
-                  styles.paginationDot,
-                  currentImageIndex === index && styles.paginationDotActive,
-                ]}
-              />
-            ))}
+    <ResponsiveContainer>
+      {/* Dynamic layout wrapper */}
+      <View style={[styles.mainLayout, { flexDirection: isTablet ? "row" : "column" }]}>
+        
+        {/* IMAGE CAROUSEL SECTION */}
+        <View style={[styles.carouselColumn, isTablet && { width: imageColWidth }]}>
+          <View style={styles.carouselContainer}>
+            <ScrollView
+              ref={scrollViewRef}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onScroll={handleScroll}
+              scrollEventThrottle={16}
+            >
+              {product.images.map((image: any, index: any) => (
+                <Image
+                  key={index}
+                  source={{ uri: image }}
+                  style={[styles.productImage, { width: imageColWidth, height: isTablet ? 500 : 400 }]}
+                  resizeMode="cover"
+                />
+              ))}
+            </ScrollView>
+            <View style={styles.pagination}>
+              {product.images.map((_: any, index: any) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.paginationDot,
+                    currentImageIndex === index && styles.paginationDotActive,
+                  ]}
+                />
+              ))}
+            </View>
           </View>
         </View>
 
-        <View style={styles.content}>
+        {/* INFO AND CONTROLS SECTION */}
+        <ScrollView style={[styles.infoColumn, { padding: spacing.md }]}>
           <View style={styles.header}>
-            <View>
-              <Text style={styles.brand}>{product.brand}</Text>
-              <Text style={styles.name}>{product.name}</Text>
+            <View style={{ flex: 1, marginRight: spacing.sm }}>
+              <Text style={[styles.brand, { fontSize: scaleFont(16) }]}>{product.brand}</Text>
+              <Text style={[styles.name, { fontSize: scaleFont(20) }]} numberOfLines={2}>{product.name}</Text>
             </View>
             <TouchableOpacity
               style={styles.wishlistButton}
@@ -266,14 +268,17 @@ export default function ProductDetails() {
           </View>
 
           <View style={styles.priceContainer}>
-            <Text style={styles.price}>₹{product.price}</Text>
-            <Text style={styles.discount}>{product.discount}</Text>
+            <Text style={[styles.price, { fontSize: scaleFont(20) }]}>₹{product.price}</Text>
+            <Text style={[styles.discount, { fontSize: scaleFont(16) }]}>{product.discount}</Text>
           </View>
 
-          <Text style={styles.description}>{product.description}</Text>
+          <Text style={[styles.description, { fontSize: scaleFont(15), lineHeight: scaleFont(22) }]}>
+            {product.description}
+          </Text>
 
+          {/* Size grid selection */}
           <View style={styles.sizeSection}>
-            <Text style={styles.sizeTitle}>Select Size</Text>
+            <Text style={[styles.sizeTitle, { fontSize: scaleFont(16) }]}>Select Size</Text>
             <View style={styles.sizeGrid}>
               {product.sizes.map((size: any) => (
                 <TouchableOpacity
@@ -287,6 +292,7 @@ export default function ProductDetails() {
                   <Text
                     style={[
                       styles.sizeText,
+                      { fontSize: scaleFont(15) },
                       selectedSize === size && styles.selectedSizeText,
                     ]}
                   >
@@ -296,31 +302,96 @@ export default function ProductDetails() {
               ))}
             </View>
           </View>
-        </View>
-      </ScrollView>
 
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={styles.addToBagButton}
-          onPress={handleAddToBag}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator size="small" color="#ff3f6c" />
-          ) : (
-            <>
-              <ShoppingBag size={20} color="#fff" />
-              <Text style={styles.addToBagText}>ADD TO BAG</Text>
-            </>
+          {/* Buy buttons inline for Tablet split layouts */}
+          {isTablet && (
+            <TouchableOpacity
+              style={[styles.addToBagButton, { marginTop: spacing.md }]}
+              onPress={handleAddToBag}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <>
+                  <ShoppingBag size={20} color="#fff" />
+                  <Text style={[styles.addToBagText, { fontSize: scaleFont(16) }]}>ADD TO BAG</Text>
+                </>
+              )}
+            </TouchableOpacity>
           )}
-        </TouchableOpacity>
+
+          {/* RECOMMENDATIONS SECTION */}
+          {isRecsLoading ? (
+            <View style={styles.recsLoaderContainer}>
+              <ActivityIndicator size="small" color="#ff3f6c" />
+            </View>
+          ) : recommendations.length > 0 ? (
+            <View style={styles.recsSection}>
+              <Text style={[styles.recsTitle, { fontSize: scaleFont(16) }]}>You May Also Like</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.recsScroll}
+              >
+                {recommendations.map((item: any) => (
+                  <TouchableOpacity
+                    key={item._id}
+                    style={styles.recCard}
+                    onPress={() => handleRecommendationPress(item)}
+                  >
+                    <Image source={{ uri: item.images?.[0] }} style={styles.recImage} resizeMode="cover" />
+                    <View style={styles.recInfo}>
+                      <Text style={[styles.recBrand, { fontSize: scaleFont(10) }]} numberOfLines={1}>
+                        {item.brand}
+                      </Text>
+                      <Text style={[styles.recName, { fontSize: scaleFont(12) }]} numberOfLines={1}>
+                        {item.name}
+                      </Text>
+                      <View style={styles.recPriceRow}>
+                        <Text style={[styles.recPrice, { fontSize: scaleFont(12) }]}>₹{item.price}</Text>
+                        {item.discount && (
+                          <Text style={[styles.recDiscount, { fontSize: scaleFont(10) }]}>{item.discount}</Text>
+                        )}
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          ) : null}
+        </ScrollView>
       </View>
-    </View>
+
+      {/* Floating footer purchase controls for phones */}
+      {!isTablet && (
+        <View style={[styles.footer, { padding: spacing.sm }]}>
+          <TouchableOpacity
+            style={styles.addToBagButton}
+            onPress={handleAddToBag}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <>
+                <ShoppingBag size={20} color="#fff" />
+                <Text style={[styles.addToBagText, { fontSize: scaleFont(16) }]}>ADD TO BAG</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+      )}
+    </ResponsiveContainer>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+  mainLayout: {
     flex: 1,
     backgroundColor: "#fff",
   },
@@ -330,11 +401,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#fff",
   },
+  carouselColumn: {
+    justifyContent: "center",
+  },
   carouselContainer: {
     position: "relative",
   },
   productImage: {
-    height: 400,
+    width: "100%",
   },
   pagination: {
     position: "absolute",
@@ -357,8 +431,8 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: 5,
   },
-  content: {
-    padding: 20,
+  infoColumn: {
+    flex: 1,
   },
   header: {
     flexDirection: "row",
@@ -366,12 +440,10 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   brand: {
-    fontSize: 16,
     color: "#666",
     marginBottom: 5,
   },
   name: {
-    fontSize: 20,
     fontWeight: "bold",
     color: "#3e3e3e",
     marginBottom: 10,
@@ -385,26 +457,22 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   price: {
-    fontSize: 20,
     fontWeight: "bold",
     color: "#3e3e3e",
     marginRight: 10,
   },
   discount: {
-    fontSize: 16,
     color: "#ff3f6c",
+    fontWeight: "600",
   },
   description: {
-    fontSize: 16,
     color: "#666",
-    lineHeight: 24,
     marginBottom: 20,
   },
   sizeSection: {
     marginBottom: 20,
   },
   sizeTitle: {
-    fontSize: 16,
     fontWeight: "bold",
     color: "#3e3e3e",
     marginBottom: 10,
@@ -415,9 +483,9 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   sizeButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     borderWidth: 1,
     borderColor: "#ddd",
     justifyContent: "center",
@@ -428,14 +496,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff4f4",
   },
   sizeText: {
-    fontSize: 16,
     color: "#3e3e3e",
   },
   selectedSizeText: {
     color: "#ff3f6c",
+    fontWeight: "bold",
   },
   footer: {
-    padding: 15,
     backgroundColor: "#fff",
     borderTopWidth: 1,
     borderTopColor: "#f0f0f0",
@@ -445,13 +512,73 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    padding: 15,
+    padding: 14,
     borderRadius: 10,
     gap: 10,
+    width: "100%",
   },
   addToBagText: {
     color: "#fff",
-    fontSize: 16,
     fontWeight: "bold",
+  },
+  recsLoaderContainer: {
+    paddingVertical: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  recsSection: {
+    marginTop: 25,
+    borderTopWidth: 1,
+    borderTopColor: "#f0f0f0",
+    paddingTop: 20,
+    paddingBottom: 20,
+    marginBottom: 20,
+  },
+  recsTitle: {
+    fontWeight: "bold",
+    color: "#3e3e3e",
+    marginBottom: 15,
+  },
+  recsScroll: {
+    paddingBottom: 5,
+  },
+  recCard: {
+    width: 140,
+    marginRight: 15,
+    borderRadius: 8,
+    overflow: "hidden",
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#f0f0f0",
+  },
+  recImage: {
+    width: "100%",
+    height: 140,
+  },
+  recInfo: {
+    padding: 8,
+  },
+  recBrand: {
+    color: "#888",
+    fontWeight: "600",
+    textTransform: "uppercase",
+    marginBottom: 2,
+  },
+  recName: {
+    color: "#3e3e3e",
+    marginBottom: 4,
+  },
+  recPriceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  recPrice: {
+    fontWeight: "bold",
+    color: "#3e3e3e",
+  },
+  recDiscount: {
+    color: "#ff3f6c",
+    fontWeight: "600",
   },
 });
