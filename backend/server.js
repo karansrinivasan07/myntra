@@ -17,6 +17,7 @@ const cors = require('cors');
 dotenv.config();
 const app = express();
 app.use(express.json());
+app.use("/uploads", express.static(require("path").join(__dirname, "uploads")));
 app.use(cors({
   origin: '*', 
   credentials: true, 
