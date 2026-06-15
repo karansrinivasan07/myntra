@@ -67,6 +67,16 @@ router.post("/", async (req, res) => {
     // Update Category association
     await Category.findByIdAndUpdate(category, { $addToSet: { productId: product._id } });
 
+    // Emit notification event asynchronously
+    try {
+      const catDoc = await Category.findById(category);
+      const categoryName = catDoc ? catDoc.name : "our catalog";
+      const { emitProductCreated } = require("../services/notificationEvents");
+      emitProductCreated(product.name, product.brand, product._id, categoryName);
+    } catch (notifError) {
+      console.error("Error triggering new product notification:", notifError);
+    }
+
     res.status(201).json(product);
   } catch (error) {
     console.error("Error adding product:", error);

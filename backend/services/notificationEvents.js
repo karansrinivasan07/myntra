@@ -195,6 +195,39 @@ function emitPromoScheduled(userId, title, body, scheduledAt) {
   eventBus.emit("promo:scheduled", { userId, title, body, scheduledAt });
 }
 
+/**
+ * PRODUCT CREATED — Broad-cast notifications to all users when a new product is added by admin
+ */
+eventBus.on("product:created", async ({ name, brand, productId, categoryName }) => {
+  try {
+    const User = require("../models/User");
+    const users = await User.find({}, { _id: 1 });
+    console.log(`[EventBus] product:created → Broad-casting to ${users.length} users...`);
+
+    for (const user of users) {
+      const notification = new Notification({
+        userId: user._id,
+        title: "New Product Alert! 🛍️",
+        body: `A new "${name}" by ${brand} was added to ${categoryName}. Check it out!`,
+        data: { screen: `/(tabs)/categories`, type: "product", productId: productId.toString() },
+        type: "real-time",
+        status: "pending",
+        scheduledAt: new Date(),
+      });
+
+      await notification.save();
+      await enqueueNotification(notification);
+    }
+    console.log(`[EventBus] product:created → Notifications queued for all users`);
+  } catch (error) {
+    console.error("[EventBus] Error handling product:created:", error);
+  }
+});
+
+function emitProductCreated(name, brand, productId, categoryName) {
+  eventBus.emit("product:created", { name, brand, productId, categoryName });
+}
+
 module.exports = {
   eventBus,
   emitOrderCreated,
@@ -203,4 +236,5 @@ module.exports = {
   emitPaymentConfirmed,
   emitCartItemAdded,
   emitPromoScheduled,
+  emitProductCreated,
 };
