@@ -115,6 +115,34 @@ export default function Bag() {
     }
   };
 
+  const handleRemoveSavedItem = (itemId: string) => {
+    Alert.alert(
+      "Confirm Removal",
+      "Remove this item from Save for Later?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: () => performRemoveSavedItem(itemId),
+        },
+      ]
+    );
+  };
+
+  const performRemoveSavedItem = async (itemId: string) => {
+    try {
+      // Optimistically remove from saved items
+      setSavedItems(prev => prev.filter(i => i._id !== itemId));
+      await axios.delete(`${API_BASE_URL}/cart/items/${itemId}`);
+      fetchCart(false);
+    } catch (error) {
+      console.error("Error removing saved item:", error);
+      Alert.alert("Error", "Could not remove item from Save for Later.");
+      fetchCart(false);
+    }
+  };
+
   const handleSaveForLater = async (itemId: string) => {
     try {
       await axios.post(`${API_BASE_URL}/cart/items/${itemId}/save`);
@@ -436,11 +464,22 @@ export default function Bag() {
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={styles.removeSavedButton}
-                    onPress={() => handleRemoveItem(item._id)}
+                    style={[
+                      styles.removeSavedTextButton,
+                      { borderColor: isMoving ? "#ccc" : "#999", marginLeft: spacing.sm },
+                      isMoving && styles.disabledRemoveButton,
+                    ]}
+                    onPress={() => handleRemoveSavedItem(item._id)}
                     disabled={isMoving}
                   >
-                    <Trash2 size={20} color={isMoving ? "#ccc" : theme.colors.textMuted} />
+                    <ThemedText
+                      style={[
+                        styles.removeSavedText,
+                        { color: isMoving ? "#ccc" : "#999", fontSize: scaleFont(11) },
+                      ]}
+                    >
+                      REMOVE
+                    </ThemedText>
                   </TouchableOpacity>
                 </View>
               </ThemedView>
@@ -786,9 +825,18 @@ const styles = StyleSheet.create({
   moveToBagText: {
     fontWeight: "bold",
   },
-  removeSavedButton: {
-    marginLeft: "auto",
-    padding: 5,
+  removeSavedTextButton: {
+    borderWidth: 1,
+    borderRadius: 5,
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+  },
+  disabledRemoveButton: {
+    borderColor: "#ccc",
+    opacity: 0.5,
+  },
+  removeSavedText: {
+    fontWeight: "bold",
   },
   footer: {
     borderTopWidth: 1,
