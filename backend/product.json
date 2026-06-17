@@ -1,0 +1,423 @@
+[
+  {
+    "name": "Slim Fit Oxford Shirt",
+    "brand": "Arrow",
+    "price": 1299,
+    "discount": "41% OFF",
+    "description": "Premium cotton Oxford shirt with a modern slim fit. Ideal for both office and smart-casual occasions. Features button-down collar and subtle texture weave.",
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ],
+    "images": [
+      "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=500&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1620012253295-c15cc3e65df4?w=500&auto=format&fit=crop"
+    ],
+    "category": "Men",
+    "stock": 80
+  },
+  {
+    "name": "Relaxed Fit Chino Pants",
+    "brand": "H&M",
+    "price": 1799,
+    "discount": "40% OFF",
+    "description": "Versatile chino pants crafted from stretch cotton for all-day comfort. A wardrobe essential for modern men.",
+    "sizes": [
+      "28",
+      "30",
+      "32",
+      "34",
+      "36"
+    ],
+    "images": [
+      "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=500&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=500&auto=format&fit=crop"
+    ],
+    "category": "Men",
+    "stock": 60
+  },
+  {
+    "name": "Graphic Print Oversized Tee",
+    "brand": "Bewakoof",
+    "price": 449,
+    "discount": "44% OFF",
+    "description": "Bold graphic oversized tee made from 100% cotton. Drop-shoulder fit for a relaxed streetwear look.",
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ],
+    "images": [
+      "https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=500&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=500&auto=format&fit=crop"
+    ],
+    "category": "Men",
+    "stock": 150
+  },
+  {
+    "name": "Slim Fit Formal Blazer",
+    "brand": "Raymond",
+    "price": 4999,
+    "discount": "44% OFF",
+    "description": "Impeccably tailored slim-fit blazer in premium wool blend. Perfect for formal events and business meetings.",
+    "sizes": [
+      "38",
+      "40",
+      "42",
+      "44"
+    ],
+    "images": [
+      "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=500&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=500&auto=format&fit=crop"
+    ],
+    "category": "Men",
+    "stock": 35
+  },
+  {
+    "name": "Printed Linen Kurta",
+    "brand": "Fabindia",
+    "price": 1599,
+    "discount": "36% OFF",
+    "description": "Handcrafted linen kurta with traditional block print. Lightweight and breathable — perfect for festive occasions.",
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ],
+    "images": [
+      "https://images.unsplash.com/photo-1620012253295-c15cc3e65df4?w=500&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=500&auto=format&fit=crop"
+    ],
+    "category": "Men",
+    "stock": 70
+  },
+  {
+    "name": "Floral Wrap Midi Dress",
+    "brand": "AND",
+    "price": 1799,
+    "discount": "49% OFF",
+    "description": "Elegant wrap-style midi dress with allover floral print. V-neck silhouette with self-tie waist belt.",
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "images": [
+      "https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=500&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=500&auto=format&fit=crop"
+    ],
+    "category": "Women",
+    "stock": 55
+  },
+  {
+    "name": "High-Waist Straight Jeans",
+    "brand": "Levi's",
+    "price": 2299,
+    "discount": "43% OFF",
+    "description": "Classic straight-cut high-waist jeans in rigid denim. A timeless staple that pairs with everything.",
+    "sizes": [
+      "26",
+      "28",
+      "30",
+      "32",
+      "34"
+    ],
+    "images": [
+      "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=500&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1555689502-c4b22d76c56f?w=500&auto=format&fit=crop"
+    ],
+    "category": "Women",
+    "stock": 90
+  },
+  {
+    "name": "Embroidered Anarkali Kurta",
+    "brand": "W",
+    "price": 2499,
+    "discount": "44% OFF",
+    "description": "Stunning Anarkali kurta adorned with intricate zari embroidery. Made from premium georgette.",
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "images": [
+      "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=500&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=500&auto=format&fit=crop"
+    ],
+    "category": "Women",
+    "stock": 40
+  },
+  {
+    "name": "Ribbed Knit Co-ord Set",
+    "brand": "Zara",
+    "price": 2999,
+    "discount": "40% OFF",
+    "description": "Chic ribbed knit co-ord set including crop top and wide-leg trousers. Effortlessly stylish.",
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L"
+    ],
+    "images": [
+      "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=500&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=500&auto=format&fit=crop"
+    ],
+    "category": "Women",
+    "stock": 45
+  },
+  {
+    "name": "Linen Blend Wide-Leg Trousers",
+    "brand": "Vero Moda",
+    "price": 1499,
+    "discount": "46% OFF",
+    "description": "Breezy wide-leg trousers in linen blend for a relaxed yet polished silhouette.",
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "images": [
+      "https://images.unsplash.com/photo-1509631179647-0177331693ae?w=500&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?w=500&auto=format&fit=crop"
+    ],
+    "category": "Women",
+    "stock": 65
+  },
+  {
+    "name": "Boys Cartoon Print T-Shirt",
+    "brand": "H&M Kids",
+    "price": 399,
+    "discount": "50% OFF",
+    "description": "Fun cartoon print t-shirt for boys. Made from soft cotton, perfect for everyday wear.",
+    "sizes": [
+      "2-3Y",
+      "4-5Y",
+      "6-7Y",
+      "8-9Y"
+    ],
+    "images": [
+      "https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?w=500&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?w=500&auto=format&fit=crop"
+    ],
+    "category": "Kids",
+    "stock": 120
+  },
+  {
+    "name": "Girls Floral Summer Dress",
+    "brand": "Max",
+    "price": 599,
+    "discount": "40% OFF",
+    "description": "Adorable floral print summer dress for girls with ruffled sleeves and swing silhouette.",
+    "sizes": [
+      "2-3Y",
+      "4-5Y",
+      "6-7Y",
+      "8-9Y",
+      "10-11Y"
+    ],
+    "images": [
+      "https://images.unsplash.com/photo-1518831959646-742c3a14ebf7?w=500&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?w=500&auto=format&fit=crop"
+    ],
+    "category": "Kids",
+    "stock": 100
+  },
+  {
+    "name": "Air Cushion Running Shoes",
+    "brand": "Puma",
+    "price": 3999,
+    "discount": "33% OFF",
+    "description": "High-performance running shoes with air-cushion midsole for superior shock absorption.",
+    "sizes": [
+      "UK6",
+      "UK7",
+      "UK8",
+      "UK9",
+      "UK10",
+      "UK11"
+    ],
+    "images": [
+      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=500&auto=format&fit=crop"
+    ],
+    "category": "Footwear",
+    "stock": 100
+  },
+  {
+    "name": "Block Heel Ankle Boots",
+    "brand": "Steve Madden",
+    "price": 3499,
+    "discount": "36% OFF",
+    "description": "Versatile block-heel ankle boots in genuine leather with a side zip closure.",
+    "sizes": [
+      "UK3",
+      "UK4",
+      "UK5",
+      "UK6",
+      "UK7"
+    ],
+    "images": [
+      "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=500&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1585386959984-a4155224a1ad?w=500&auto=format&fit=crop"
+    ],
+    "category": "Footwear",
+    "stock": 50
+  },
+  {
+    "name": "Canvas Low-Top Sneakers",
+    "brand": "Converse",
+    "price": 2799,
+    "discount": "30% OFF",
+    "description": "Iconic canvas low-top sneakers with vulcanised rubber sole. A timeless classic.",
+    "sizes": [
+      "UK4",
+      "UK5",
+      "UK6",
+      "UK7",
+      "UK8",
+      "UK9",
+      "UK10"
+    ],
+    "images": [
+      "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=500&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1607522370275-f14206abe5d3?w=500&auto=format&fit=crop"
+    ],
+    "category": "Footwear",
+    "stock": 120
+  },
+  {
+    "name": "Leather Bifold Wallet",
+    "brand": "Baggit",
+    "price": 699,
+    "discount": "46% OFF",
+    "description": "Slim bifold wallet crafted from genuine leather with RFID-blocking lining.",
+    "sizes": [
+      "One Size"
+    ],
+    "images": [
+      "https://images.unsplash.com/photo-1624222247344-550fb60583dc?w=500&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=500&auto=format&fit=crop"
+    ],
+    "category": "Accessories",
+    "stock": 200
+  },
+  {
+    "name": "Polarised Aviator Sunglasses",
+    "brand": "Ray-Ban",
+    "price": 4999,
+    "discount": "38% OFF",
+    "description": "Classic aviator sunglasses with polarised lenses offering 100% UV protection.",
+    "sizes": [
+      "One Size"
+    ],
+    "images": [
+      "https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=500&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1574258495973-f010dfbb5371?w=500&auto=format&fit=crop"
+    ],
+    "category": "Accessories",
+    "stock": 60
+  },
+  {
+    "name": "Printed Canvas Tote Bag",
+    "brand": "Anouk",
+    "price": 499,
+    "discount": "50% OFF",
+    "description": "Spacious canvas tote bag with a bold printed design. Features zip-top closure.",
+    "sizes": [
+      "One Size"
+    ],
+    "images": [
+      "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=500&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500&auto=format&fit=crop"
+    ],
+    "category": "Accessories",
+    "stock": 180
+  },
+  {
+    "name": "Matte Lipstick Set - 5 Shades",
+    "brand": "Maybelline",
+    "price": 799,
+    "discount": "47% OFF",
+    "description": "Long-lasting matte lipstick set with 5 carefully curated shades. 12-hour wear formula.",
+    "sizes": [
+      "One Size"
+    ],
+    "images": [
+      "https://images.unsplash.com/photo-1591561954557-26941169b49e?w=500&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=500&auto=format&fit=crop"
+    ],
+    "category": "Beauty",
+    "stock": 300
+  },
+  {
+    "name": "Vitamin C Brightening Serum",
+    "brand": "The Ordinary",
+    "price": 1199,
+    "discount": "40% OFF",
+    "description": "Potent 20% Vitamin C serum formulated to brighten skin tone and reduce dark spots.",
+    "sizes": [
+      "30ml"
+    ],
+    "images": [
+      "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=500&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1571781926291-c477ebfd024b?w=500&auto=format&fit=crop"
+    ],
+    "category": "Beauty",
+    "stock": 250
+  },
+  {
+    "name": "Dri-Fit Training T-Shirt",
+    "brand": "Nike",
+    "price": 1499,
+    "discount": "40% OFF",
+    "description": "Nike Dri-FIT technology moves sweat away from the body for quicker evaporation during intense training.",
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ],
+    "images": [
+      "https://images.unsplash.com/photo-1583744946564-b52ac1c389c8?w=500&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1554568218-0f1715e72254?w=500&auto=format&fit=crop"
+    ],
+    "category": "Sports",
+    "stock": 140
+  },
+  {
+    "name": "High-Waist Yoga Leggings",
+    "brand": "Adidas",
+    "price": 2199,
+    "discount": "37% OFF",
+    "description": "Four-way stretch yoga leggings with high-waist band for core support. Moisture-wicking AEROREADY technology.",
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "images": [
+      "https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=500&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1594381898411-846e7d193883?w=500&auto=format&fit=crop"
+    ],
+    "category": "Sports",
+    "stock": 110
+  }
+]
