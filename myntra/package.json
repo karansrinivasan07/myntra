@@ -57,5 +57,9 @@
     "react-test-renderer": "18.3.1",
     "typescript": "^5.3.3"
   },
-  "private": true
+  "private": true,
+  "overrides": {
+    "glob": "^9.0.0",
+    "rimraf": "^4.0.0"
+  }
 }

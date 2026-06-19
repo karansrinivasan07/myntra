@@ -25,5 +25,9 @@
   "devDependencies": {
     "mongodb-memory-server": "^11.2.0",
     "nodemon": "^3.1.10"
+  },
+  "overrides": {
+    "glob": "^9.0.0",
+    "rimraf": "^4.0.0"
   }
 }
