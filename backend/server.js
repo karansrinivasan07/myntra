@@ -30,6 +30,7 @@ app.use((req, res, next) => {
 app.get("/", (req, res) => {
   res.send("✅ Myntra backend in working");
 });
+app.get("/favicon.ico", (req, res) => res.status(204).end());
 app.use("/user", userrouter);
 app.use("/category", categoryrouter);
 app.use("/product", productrouter);
