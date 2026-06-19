@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { getRecentlyViewed, syncRecentlyViewed, ViewedProduct } from "../utils/recentlyViewed";
 import { useAuth } from "../context/AuthContext";
 import { resolveImageUri } from "../utils/image";
+import { API_BASE_URL } from "../constants/Api";
 
 const RecentlyViewedSection: React.FC = () => {
   const router = useRouter();
@@ -14,7 +15,7 @@ const RecentlyViewedSection: React.FC = () => {
   useEffect(() => {
     const load = async () => {
       const local = await getRecentlyViewed();
-      
+
       // Cleanup stale/broken cached image URLs
       const cleanedLocal = local.map(item => {
         let img = item.image;
@@ -22,7 +23,7 @@ const RecentlyViewedSection: React.FC = () => {
           if (img.includes("photo-1583391733956-6c78276477e1")) {
             img = "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=500&auto=format&fit=crop";
           } else if (img.includes("photo-1618244972963-dbad0c4abf18")) {
-            img = "http://localhost:5000/uploads/ribbed_knit_co_ord.png";
+            img = `${API_BASE_URL}/uploads/ribbed_knit_co_ord.png`;
           } else if (img.includes("photo-1594938298603-c8148c4b4c0a")) {
             img = "https://images.unsplash.com/photo-1479064555552-3ef4979f8908?w=500&auto=format&fit=crop";
           } else if (img.includes("photo-1586495777744-4e6232bf2f31")) {
@@ -38,7 +39,7 @@ const RecentlyViewedSection: React.FC = () => {
       if (user?._id) {
         await syncRecentlyViewed(user._id);
         const refreshed = await getRecentlyViewed();
-        
+
         // Cleanup refreshed server items too in case of stale DB sync
         const cleanedRefreshed = refreshed.map(item => {
           let img = item.image;
@@ -46,7 +47,7 @@ const RecentlyViewedSection: React.FC = () => {
             if (img.includes("photo-1583391733956-6c78276477e1")) {
               img = "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=500&auto=format&fit=crop";
             } else if (img.includes("photo-1618244972963-dbad0c4abf18")) {
-              img = "http://localhost:5000/uploads/ribbed_knit_co_ord.png";
+              img = `${API_BASE_URL}/uploads/ribbed_knit_co_ord.png`;
             } else if (img.includes("photo-1594938298603-c8148c4b4c0a")) {
               img = "https://images.unsplash.com/photo-1479064555552-3ef4979f8908?w=500&auto=format&fit=crop";
             } else if (img.includes("photo-1586495777744-4e6232bf2f31")) {
@@ -57,7 +58,7 @@ const RecentlyViewedSection: React.FC = () => {
           }
           return { ...item, image: img };
         });
-        
+
         setItems(cleanedRefreshed);
       }
     };
