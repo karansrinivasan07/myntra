@@ -31,6 +31,16 @@ app.get("/", (req, res) => {
   res.send("✅ Myntra backend in working");
 });
 app.get("/favicon.ico", (req, res) => res.status(204).end());
+app.get("/health", (req, res) => res.status(200).json({ status: "ok", time: new Date() }));
+
+// Handle /api prefix from various frontend components or tools
+app.use((req, res, next) => {
+  if (req.url.startsWith("/api/")) {
+    console.log(`[Middleware] Stripping /api prefix from ${req.url}`);
+    req.url = req.url.replace("/api/", "/");
+  }
+  next();
+});
 app.use("/user", userrouter);
 app.use("/category", categoryrouter);
 app.use("/product", productrouter);
