@@ -8,7 +8,9 @@ const isWeb = Platform.OS === "web";
 const debuggerHost = Constants.expoConfig?.hostUri;
 const localIp = debuggerHost?.split(':')[0] || "192.168.31.23";
 
-// Use local machine IP for emulators/devices, localhost for web
-export const API_BASE_URL = isWeb 
-  ? "http://localhost:5000" 
-  : `http://${localIp}:5000`;
+// Use environment variable if available, otherwise fallback to local IP/localhost
+const baseUrl = process.env.EXPO_PUBLIC_API_URL || process.env.API_BASE_URL;
+
+export const API_BASE_URL = baseUrl || (isWeb
+  ? "http://localhost:5000"
+  : `http://${localIp}:5000`);
