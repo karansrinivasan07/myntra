@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   TextInput,
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Search, ChevronRight, Bell, ArrowLeft, X } from "lucide-react-native";
@@ -45,7 +46,7 @@ export default function Home() {
   const [unreadCount, setUnreadCount] = useState(0);
   const { user } = useAuth();
   const { theme } = useTheme();
-  
+
   const { scaleFont, spacing, isTablet } = useResponsive();
 
   // Search State
@@ -245,7 +246,7 @@ export default function Home() {
                   <ChevronRight size={20} color={theme.colors.primary} />
                 </TouchableOpacity>
               </ThemedView>
-              
+
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -305,7 +306,7 @@ export default function Home() {
                   TRENDING NOW
                 </ThemedText>
               </ThemedView>
-              
+
               {isLoading ? (
                 <ActivityIndicator size="large" color={theme.colors.primary} style={styles.loader} />
               ) : product.length === 0 ? (
@@ -466,13 +467,22 @@ const styles = StyleSheet.create({
   productCard: {
     width: "100%",
     borderRadius: 10,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 3,
+    ...Platform.select({
+      ios: {
+        shadowOffset: {
+          width: 0,
+          height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 3.84,
+      },
+      android: {
+        elevation: 3,
+      },
+      web: {
+        boxShadow: "0 2px 3.84px rgba(0, 0, 0, 0.1)",
+      },
+    }),
     overflow: "hidden",
   },
   productImage: {

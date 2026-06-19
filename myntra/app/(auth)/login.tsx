@@ -297,8 +297,20 @@ const styles = StyleSheet.create({
   button: {
     backgroundColor: "#ff3f6c", padding: 16, borderRadius: 12,
     alignItems: "center", marginTop: 4,
-    shadowColor: "#ff3f6c", shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35, shadowRadius: 12, elevation: 6,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#ff3f6c",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.35,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 6,
+      },
+      web: {
+        boxShadow: "0 4px 12px rgba(255, 63, 108, 0.35)",
+      },
+    }),
   },
   buttonDisabled: { opacity: 0.7 },
   buttonText: { color: "#fff", fontSize: 15, fontWeight: "700", letterSpacing: 1.2 },
@@ -317,7 +329,19 @@ const styles = StyleSheet.create({
     flex: 1, backgroundColor: "#fff",
     borderTopLeftRadius: 28, borderTopRightRadius: 28,
     marginTop: -24, padding: 28, paddingTop: 32,
-    shadowColor: "#000", shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.06, shadowRadius: 12, elevation: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.06,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 8,
+      },
+      web: {
+        boxShadow: "0 -4px 12px rgba(0, 0, 0, 0.06)",
+      },
+    }),
   },
 });
