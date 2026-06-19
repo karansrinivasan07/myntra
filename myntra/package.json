@@ -59,7 +59,7 @@
   },
   "private": true,
   "overrides": {
-    "glob": "^9.0.0",
-    "rimraf": "^4.0.0"
+    "glob": "^11.0.0",
+    "rimraf": "^5.0.0"
   }
 }
